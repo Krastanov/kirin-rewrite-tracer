@@ -134,7 +134,7 @@ def _document_bytes(trace: Trace, *, nonce: str | None = None) -> bytes:
         "</div>\n"
         '<ol class="event-tree" id="event-tree"></ol>\n'
         "</section>\n"
-        '<section class="ssa-workspace" id="ssa-workspace" '
+        '<section class="ssa-workspace" id="ssa-workspace" tabindex="-1" '
         'aria-labelledby="ssa-heading">\n'
         '<h2 class="visually-hidden" id="ssa-heading">SSA states</h2>\n'
         '<p class="empty-state" id="ssa-empty">Select an event to inspect states.</p>\n'

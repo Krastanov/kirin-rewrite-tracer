@@ -320,7 +320,8 @@ def test_coarse_parent_provenance_is_exact_bidirectional_and_owner_scoped(
     ]
     wrappers = driver.find_elements(By.CSS_SELECTOR, ".ssa-occurrence")
     assert wrappers
-    assert {wrapper.tag_name for wrapper in wrappers} == {"span"}
+    assert {wrapper.tag_name for wrapper in wrappers} == {"button"}
+    assert {wrapper.get_attribute("type") for wrapper in wrappers} == {"button"}
     assert all(wrapper.get_attribute("role") is None for wrapper in wrappers)
     assert all(
         wrapper.get_attribute("data-occurrence-role")

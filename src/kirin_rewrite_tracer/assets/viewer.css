@@ -141,12 +141,29 @@ button:focus-visible,
 }
 
 .trace-code {
+  position: relative;
   margin: 0;
   overflow: visible;
   color: var(--code-foreground);
   background: var(--code-background);
   font-family: ui-monospace, monospace;
   white-space: pre;
+}
+
+.ssa-occurrence {
+  appearance: none;
+  display: inline;
+  margin: 0;
+  padding: 0;
+  color: inherit;
+  background: transparent;
+  border: 0;
+  border-radius: 0;
+  font: inherit;
+  line-height: inherit;
+  text-align: inherit;
+  vertical-align: baseline;
+  white-space: inherit;
 }
 
 .ssa-occurrence[data-provenance-related="true"] {
@@ -174,6 +191,7 @@ button:focus-visible,
   background: var(--raised);
   border: 1px solid var(--border);
   border-radius: 0.25rem;
+  font-family: system-ui, sans-serif;
   white-space: normal;
 }
 
@@ -194,11 +212,20 @@ button:focus-visible,
   margin-block: 0 0.75rem;
 }
 
-.ssa-metadata-binding,
+.ssa-metadata-bindings {
+  padding: 0;
+  list-style: none;
+}
+
+.ssa-metadata-binding dl,
 .ssa-metadata-field {
   display: grid;
   grid-template-columns: minmax(8rem, auto) minmax(0, 1fr);
   gap: 0.5rem;
+}
+
+.ssa-metadata-binding dl {
+  margin: 0;
 }
 
 .ssa-metadata-field dt {

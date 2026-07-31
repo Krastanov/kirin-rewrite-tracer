@@ -12,6 +12,8 @@ const facts = document.getElementById("selected-facts");
 const factsEmpty = document.getElementById("facts-empty");
 const selectionStatus = document.getElementById("selection-status");
 const clearSelection = document.querySelector(".clear-selection");
+const skipLink = document.querySelector(".skip-link");
+const ssaWorkspace = document.getElementById("ssa-workspace");
 
 /*
  * These maps are disposable browser indexes. Values remain the canonical decoded
@@ -38,10 +40,13 @@ const occurrenceOrdinalById = new Map();
 const applicableRelationsByEvent = new Map();
 const metadataInventoryBySnapshotAndEntity = new Map();
 const projectedSnapshotById = new Map();
+const occurrenceTextById = new Map();
 const classesByStyle = new Map();
 const eventButtons = new Map();
 const eventRows = new Map();
+const eventDescriptions = new Map();
 const occurrenceRecordByElement = new WeakMap();
+const neighborProjectionByRecord = new WeakMap();
 
 for (const configuration of trace.configurations) {
   configurationById.set(configuration.id, configuration);
@@ -122,6 +127,9 @@ for (const effect of trace.effects) {
 for (const snapshot of projection.snapshots) {
   projectedSnapshotById.set(snapshot.snapshot_id, snapshot);
 }
+for (const occurrence of projection.occurrences) {
+  occurrenceTextById.set(occurrence.occurrence_id, occurrence.text);
+}
 for (const style of projection.styles) {
   classesByStyle.set(style.style_id, style.css_class);
 }
@@ -136,6 +144,9 @@ function appendPreorder(parentId) {
 appendPreorder(null);
 
 summary.textContent = `${trace.events.length} event${trace.events.length === 1 ? "" : "s"}; aggregate ${trace.complete ? "complete" : "incomplete"}.`;
+if (trace.events.length === 0) {
+  emptyWorkspace.textContent = "No rewrite events were captured.";
+}
 
 function isStrictDescendant(candidateId, ancestorId) {
   let parentId = parentByEvent.get(candidateId);
@@ -420,22 +431,44 @@ function reduceAdjacentEdge(leftColumn, rightColumn) {
   });
 }
 
+let eventDescriptionSequence = 0;
+let occurrenceControlSequence = 0;
+let columnSequence = 0;
+let overlayHeadingSequence = 0;
+
+function eventDescription(event, depth, selected) {
+  const siblings = childrenByParent.get(event.parent_id) || [];
+  const sibling = siblings.indexOf(event) + 1;
+  const parent =
+    event.parent_id === null ? "absent" : event.parent_id;
+  return `Event ${event.id}; rule ${event.rule_type}; depth ${depth}; parent ${parent}; sibling ${sibling} of ${siblings.length}; completion ${event.completion}; selection ${selected ? "selected" : "unselected"}.`;
+}
+
 function appendEventBranch(parentId, list, depth) {
   for (const event of childrenByParent.get(parentId) || []) {
     const item = document.createElement("li");
     item.dataset.eventId = event.id;
     const button = document.createElement("button");
+    const description = document.createElement("span");
+    const descriptionId = `event-description-${eventDescriptionSequence}`;
+    eventDescriptionSequence += 1;
     button.type = "button";
     button.className = "event-button";
     button.dataset.eventId = event.id;
     button.dataset.depth = String(depth);
     button.textContent = `${event.id} — ${event.rule_type} — ${event.completion}`;
+    button.setAttribute("aria-describedby", descriptionId);
+    description.id = descriptionId;
+    description.className = "visually-hidden event-description";
+    description.hidden = true;
+    description.textContent = eventDescription(event, depth, false);
     button.addEventListener("click", (inputEvent) => {
       activateEvent(event.id, inputEvent);
     });
     eventButtons.set(event.id, button);
     eventRows.set(event.id, item);
-    item.append(button);
+    eventDescriptions.set(event.id, description);
+    item.append(button, description);
     const children = childrenByParent.get(event.id) || [];
     if (children.length > 0) {
       const childList = document.createElement("ol");
@@ -605,6 +638,7 @@ function definitionSuffix(presentationOccurrence, inventories) {
   const suffix = document.createElement("span");
   suffix.className = "ssa-metadata-suffix";
   suffix.textContent = ` ⟦${typeRecords[0].value.text}⟧`;
+  suffix.setAttribute("aria-hidden", "true");
   return suffix;
 }
 
@@ -614,8 +648,27 @@ function appendOccurrenceRecord(columnState, element, bindings) {
     bindings,
     presentationOccurrence.entity_id,
   );
+  const labels = bindings.map((binding) =>
+    occurrenceTextById.get(binding.occurrence.id),
+  );
+  if (
+    labels[0] === undefined ||
+    !labels.every((label) => label === labels[0])
+  ) {
+    throw new Error("a logical occurrence requires one exact captured label");
+  }
   const suffixElement = definitionSuffix(presentationOccurrence, inventories);
+  const descriptionElement = document.createElement("span");
+  const controlOrdinal = occurrenceControlSequence;
+  occurrenceControlSequence += 1;
+  const descriptionId = `ssa-occurrence-description-${controlOrdinal}`;
+  const overlayId = `ssa-metadata-overlay-${controlOrdinal}`;
+  element.type = "button";
   element.className = "ssa-occurrence";
+  element.setAttribute("aria-label", labels[0]);
+  element.setAttribute("aria-describedby", descriptionId);
+  element.setAttribute("aria-controls", overlayId);
+  element.setAttribute("aria-expanded", "false");
   element.dataset.columnIndex = String(columnState.index);
   element.dataset.entityId = presentationOccurrence.entity_id;
   element.dataset.occurrenceId = presentationOccurrence.id;
@@ -626,6 +679,10 @@ function appendOccurrenceRecord(columnState, element, bindings) {
   element.dataset.roleOccurrenceIds = bindings
     .map((binding) => `${binding.roleName}=${binding.occurrence.id}`)
     .join("|");
+  descriptionElement.id = descriptionId;
+  descriptionElement.className =
+    "visually-hidden ssa-occurrence-description";
+  descriptionElement.hidden = true;
 
   const record = Object.freeze({
     element,
@@ -635,6 +692,9 @@ function appendOccurrenceRecord(columnState, element, bindings) {
     bindings,
     inventories,
     suffixElement,
+    descriptionElement,
+    label: labels[0],
+    overlayId,
   });
   occurrenceRecordByElement.set(element, record);
   const byEntity =
@@ -642,11 +702,11 @@ function appendOccurrenceRecord(columnState, element, bindings) {
   byEntity.push(record);
   columnState.occurrencesByEntity.set(record.entityId, byEntity);
   columnState.occurrences.push(record);
-  element.addEventListener("pointerenter", () => {
-    previewProvenance(record);
+  element.addEventListener("pointerenter", (inputEvent) => {
+    enterPointerProvenance(record, inputEvent);
   });
-  element.addEventListener("pointerleave", () => {
-    endPointerProvenance(record);
+  element.addEventListener("pointerleave", (inputEvent) => {
+    leavePointerProvenance(record, inputEvent);
   });
   return record;
 }
@@ -654,7 +714,7 @@ function appendOccurrenceRecord(columnState, element, bindings) {
 function renderCode(column, columnState) {
   const [presentationRole] = column.roles;
   const projected = projectedSnapshotById.get(presentationRole.snapshotId);
-  const code = document.createElement("code");
+  const code = document.createElement("div");
   code.className = "trace-code";
   let activeOccurrenceId = null;
   let activeWrapper = null;
@@ -668,7 +728,7 @@ function renderCode(column, columnState) {
     }
     if (activeOccurrenceId !== interactiveOccurrence.id) {
       activeOccurrenceId = interactiveOccurrence.id;
-      activeWrapper = document.createElement("span");
+      activeWrapper = document.createElement("button");
       const record = appendOccurrenceRecord(
         columnState,
         activeWrapper,
@@ -678,6 +738,7 @@ function renderCode(column, columnState) {
       if (record.suffixElement !== null) {
         code.append(record.suffixElement);
       }
+      code.append(record.descriptionElement);
     }
     activeWrapper.append(renderRun(run));
   }
@@ -697,6 +758,9 @@ function columnHeading(column) {
 
 function renderColumn(column, index) {
   const section = document.createElement("section");
+  const columnId = `ssa-column-${columnSequence}`;
+  const headingId = `ssa-column-heading-${columnSequence}`;
+  columnSequence += 1;
   const columnState = {
     column,
     element: section,
@@ -704,7 +768,9 @@ function renderColumn(column, index) {
     occurrences: [],
     occurrencesByEntity: new Map(),
   };
+  section.id = columnId;
   section.className = "state-column";
+  section.setAttribute("aria-labelledby", headingId);
   section.dataset.columnKey = column.key;
   section.dataset.roleCount = String(column.roles.length);
   section.dataset.roles = column.roles.map(roleName).join("|");
@@ -717,6 +783,7 @@ function renderColumn(column, index) {
   }
 
   const heading = document.createElement("h2");
+  heading.id = headingId;
   heading.textContent = columnHeading(column);
   section.append(heading);
   const [presentationRole] = column.roles;
@@ -733,8 +800,15 @@ function renderColumn(column, index) {
 
 let renderedColumnState = Object.freeze([]);
 let renderedEdgeState = Object.freeze([]);
-let activePointerOccurrence = null;
 const provenanceTargets = new Set();
+let pointerProvenanceCandidate = null;
+let keyboardProvenanceCandidate = null;
+let provenancePreviewOwner = null;
+let provenanceCandidateClock = 0;
+let pendingTabFocusToken = null;
+let provenanceReconcilePending = false;
+let pointerProvenanceArmed = true;
+let suppressProgrammaticFocus = false;
 let activeMetadataOccurrence = null;
 let activeMetadataOverlay = null;
 
@@ -742,20 +816,34 @@ function currentOccurrenceRecord(record) {
   const currentColumn = renderedColumnState[record.columnIndex];
   return (
     record.element.isConnected &&
+    occurrenceRecordByElement.get(record.element) === record &&
     currentColumn !== undefined &&
     currentColumn.column.key === record.columnKey &&
-    currentColumn.occurrences.includes(record)
+    currentColumn.occurrences.includes(record) &&
+    record.bindings.length === currentColumn.column.roles.length &&
+    record.bindings.every(
+      (binding, index) =>
+        binding.roleName === roleName(currentColumn.column.roles[index]),
+    )
   );
 }
 
-function clearProvenancePreview() {
-  activePointerOccurrence = null;
+function clearProvenanceMarks() {
   for (const target of provenanceTargets) {
     delete target.dataset.provenanceRelated;
     delete target.dataset.provenanceIdentity;
     delete target.dataset.provenanceRelationIds;
   }
   provenanceTargets.clear();
+}
+
+function discardProvenanceCandidates() {
+  pointerProvenanceCandidate = null;
+  keyboardProvenanceCandidate = null;
+  provenancePreviewOwner = null;
+  pendingTabFocusToken = null;
+  pointerProvenanceArmed = false;
+  clearProvenanceMarks();
 }
 
 function bindingForRole(record, role) {
@@ -782,74 +870,390 @@ function relationEvidence(edge, sourceEntityId, targetEntityId, sourceIsLeft) {
   );
 }
 
-function markProvenanceTarget(target, identity, relations) {
+function projectNeighbor(
+  sourceRecord,
+  neighborIndex,
+  edge,
+  sourceIsLeft,
+  side,
+) {
+  if (
+    neighborIndex < 0 ||
+    neighborIndex >= renderedColumnState.length
+  ) {
+    return Object.freeze({
+      side,
+      status: "none",
+      roleName: null,
+      roleNames: Object.freeze([]),
+      matches: Object.freeze([]),
+    });
+  }
+
+  const neighbor = renderedColumnState[neighborIndex];
+  const neighborRoleNames = Object.freeze(
+    neighbor.column.roles.map((role) => roleName(role)),
+  );
+  const targetRole = sourceIsLeft ? edge.rightRole : edge.leftRole;
+  const targetRoleName = roleName(targetRole);
+  if (targetRole.kind === "absent") {
+    return Object.freeze({
+      side,
+      status: "absent",
+      roleName: targetRoleName,
+      roleNames: neighborRoleNames,
+      matches: Object.freeze([]),
+    });
+  }
+
+  const matches = [];
+  if (edge.kind !== "barrier" && edge.kind !== "disconnected") {
+    const sourceRole = sourceIsLeft ? edge.leftRole : edge.rightRole;
+    const sourceBinding = bindingForRole(sourceRecord, sourceRole);
+    if (sourceBinding === undefined) {
+      throw new Error("rendered source lacks its facing logical occurrence");
+    }
+    for (
+      let targetOrdinal = 0;
+      targetOrdinal < neighbor.occurrences.length;
+      targetOrdinal += 1
+    ) {
+      const targetRecord = neighbor.occurrences[targetOrdinal];
+      const targetBinding = bindingForRole(targetRecord, targetRole);
+      if (targetBinding === undefined) {
+        throw new Error("rendered target lacks its facing logical occurrence");
+      }
+      const identity =
+        sourceBinding.occurrence.entity_id ===
+        targetBinding.occurrence.entity_id;
+      const relations = relationEvidence(
+        edge,
+        sourceBinding.occurrence.entity_id,
+        targetBinding.occurrence.entity_id,
+        sourceIsLeft,
+      );
+      if (!identity && relations.length === 0) {
+        continue;
+      }
+      const entity = entityById.get(targetBinding.occurrence.entity_id);
+      if (entity === undefined) {
+        throw new Error("provenance target lacks its canonical entity");
+      }
+      const renderedLabel = occurrenceTextById.get(
+        targetBinding.occurrence.id,
+      );
+      if (renderedLabel === undefined) {
+        throw new Error("provenance target lacks its projected label");
+      }
+      matches.push(
+        Object.freeze({
+          record: targetRecord,
+          entityId: entity.id,
+          definingOwnerId: entity.defining_owner_id,
+          ordinal: targetOrdinal + 1,
+          renderedLabel,
+          identity,
+          relations: Object.freeze(relations.slice()),
+        }),
+      );
+    }
+  }
+  return Object.freeze({
+    side,
+    status: "present",
+    roleName: targetRoleName,
+    roleNames: neighborRoleNames,
+    matches: Object.freeze(matches),
+  });
+}
+
+function projectImmediateNeighbors(sourceRecord) {
+  if (!currentOccurrenceRecord(sourceRecord)) {
+    throw new Error("cannot project neighbors for a stale occurrence");
+  }
+  const cached = neighborProjectionByRecord.get(sourceRecord);
+  if (cached !== undefined) {
+    return cached;
+  }
+  const left =
+    sourceRecord.columnIndex === 0
+      ? projectNeighbor(sourceRecord, -1, null, false, "Left")
+      : projectNeighbor(
+          sourceRecord,
+          sourceRecord.columnIndex - 1,
+          renderedEdgeState[sourceRecord.columnIndex - 1],
+          false,
+          "Left",
+        );
+  const right =
+    sourceRecord.columnIndex + 1 === renderedColumnState.length
+      ? projectNeighbor(
+          sourceRecord,
+          renderedColumnState.length,
+          null,
+          true,
+          "Right",
+        )
+      : projectNeighbor(
+          sourceRecord,
+          sourceRecord.columnIndex + 1,
+          renderedEdgeState[sourceRecord.columnIndex],
+          true,
+          "Right",
+        );
+  const result = Object.freeze({left, right});
+  neighborProjectionByRecord.set(sourceRecord, result);
+  return result;
+}
+
+function neighborDescription(neighbor) {
+  if (neighbor.status === "none") {
+    return `${neighbor.side} neighbor: none.`;
+  }
+  if (neighbor.status === "absent") {
+    return (
+      `${neighbor.side} neighbor ${neighbor.roleName}; column roles ` +
+      `${neighbor.roleNames.join(" | ")}: absent SSA state.`
+    );
+  }
+  let description =
+    `${neighbor.side} neighbor ${neighbor.roleName}; column roles ` +
+    `${neighbor.roleNames.join(" | ")}: present; ` +
+    `matches ${neighbor.matches.length}.`;
+  for (const match of neighbor.matches) {
+    const owner =
+      match.definingOwnerId === null ? "absent" : match.definingOwnerId;
+    const evidence = [];
+    if (match.identity) {
+      evidence.push("identity");
+    }
+    if (match.relations.length > 0) {
+      evidence.push(
+        `relations ${match.relations.map((relation) => relation.id).join(", ")}`,
+      );
+    }
+    description +=
+      ` Neighbor occurrence ordinal ${match.ordinal}: entity ${match.entityId}; ` +
+      `defining owner ${owner}; label ${JSON.stringify(match.renderedLabel)}; ` +
+      `evidence ${evidence.join(" and ")}.`;
+  }
+  return description;
+}
+
+function refreshOccurrenceDescriptions() {
+  for (const columnState of renderedColumnState) {
+    for (const record of columnState.occurrences) {
+      const entity = entityById.get(record.entityId);
+      if (entity === undefined) {
+        throw new Error("rendered occurrence lacks its canonical entity");
+      }
+      const owner =
+        entity.defining_owner_id === null
+          ? "absent"
+          : entity.defining_owner_id;
+      const role =
+        record.bindings[0].occurrence.role === "definition"
+          ? "Definition"
+          : "Reference";
+      const roles = record.bindings
+        .map((binding) => binding.roleName)
+        .join(" | ");
+      const neighbors = projectImmediateNeighbors(record);
+      record.descriptionElement.textContent =
+        `${role} occurrence; entity ${record.entityId}; defining owner ${owner}; ` +
+        `state roles ${roles}. ${neighborDescription(neighbors.left)} ` +
+        neighborDescription(neighbors.right);
+    }
+  }
+}
+
+function markProvenanceTarget(match) {
+  const target = match.record.element;
   target.dataset.provenanceRelated = "true";
-  target.dataset.provenanceIdentity = identity ? "true" : "false";
-  target.dataset.provenanceRelationIds = relations
+  target.dataset.provenanceIdentity = match.identity ? "true" : "false";
+  target.dataset.provenanceRelationIds = match.relations
     .map((relation) => relation.id)
     .join(" ");
   provenanceTargets.add(target);
 }
 
-function previewNeighbor(sourceRecord, neighborIndex, edge, sourceIsLeft) {
-  if (edge.kind === "barrier" || edge.kind === "disconnected") {
+function provenanceCandidate(record) {
+  provenanceCandidateClock += 1;
+  return Object.freeze({
+    record,
+    enteredAt: provenanceCandidateClock,
+  });
+}
+
+function reconcileProvenanceCandidates() {
+  provenanceReconcilePending = false;
+  if (
+    pointerProvenanceCandidate !== null &&
+    !currentOccurrenceRecord(pointerProvenanceCandidate.record)
+  ) {
+    pointerProvenanceCandidate = null;
+  }
+  if (
+    keyboardProvenanceCandidate !== null &&
+    !currentOccurrenceRecord(keyboardProvenanceCandidate.record)
+  ) {
+    keyboardProvenanceCandidate = null;
+  }
+  const candidates = [
+    pointerProvenanceCandidate,
+    keyboardProvenanceCandidate,
+  ].filter((candidate) => candidate !== null);
+  candidates.sort((left, right) => right.enteredAt - left.enteredAt);
+  const nextOwner = candidates.length === 0 ? null : candidates[0];
+  if (nextOwner === provenancePreviewOwner) {
     return;
   }
-  const sourceRole = sourceIsLeft ? edge.leftRole : edge.rightRole;
-  const targetRole = sourceIsLeft ? edge.rightRole : edge.leftRole;
-  const sourceBinding = bindingForRole(sourceRecord, sourceRole);
-  if (sourceBinding === undefined) {
-    throw new Error("rendered source lacks its facing logical occurrence");
+  clearProvenanceMarks();
+  provenancePreviewOwner = nextOwner;
+  if (nextOwner === null) {
+    return;
   }
-
-  const neighbor = renderedColumnState[neighborIndex];
-  for (const targetRecord of neighbor.occurrences) {
-    const targetBinding = bindingForRole(targetRecord, targetRole);
-    if (targetBinding === undefined) {
-      throw new Error("rendered target lacks its facing logical occurrence");
-    }
-    const identity =
-      sourceBinding.occurrence.entity_id ===
-      targetBinding.occurrence.entity_id;
-    const relations = relationEvidence(
-      edge,
-      sourceBinding.occurrence.entity_id,
-      targetBinding.occurrence.entity_id,
-      sourceIsLeft,
-    );
-    if (identity || relations.length > 0) {
-      markProvenanceTarget(targetRecord.element, identity, relations);
+  const projection = projectImmediateNeighbors(nextOwner.record);
+  for (const neighbor of [projection.left, projection.right]) {
+    for (const match of neighbor.matches) {
+      markProvenanceTarget(match);
     }
   }
 }
 
-function previewProvenance(sourceRecord) {
-  if (!currentOccurrenceRecord(sourceRecord)) {
+function scheduleProvenanceReconcile() {
+  if (provenanceReconcilePending) {
     return;
   }
-  clearProvenancePreview();
-  activePointerOccurrence = sourceRecord;
-  if (sourceRecord.columnIndex > 0) {
-    previewNeighbor(
-      sourceRecord,
-      sourceRecord.columnIndex - 1,
-      renderedEdgeState[sourceRecord.columnIndex - 1],
-      false,
-    );
+  provenanceReconcilePending = true;
+  queueMicrotask(reconcileProvenanceCandidates);
+}
+
+function enterPointerProvenance(record, inputEvent) {
+  if (
+    !inputEvent.isTrusted ||
+    !pointerProvenanceArmed ||
+    !currentOccurrenceRecord(record)
+  ) {
+    return;
   }
-  if (sourceRecord.columnIndex + 1 < renderedColumnState.length) {
-    previewNeighbor(
-      sourceRecord,
-      sourceRecord.columnIndex + 1,
-      renderedEdgeState[sourceRecord.columnIndex],
-      true,
-    );
+  if (pointerProvenanceCandidate?.record !== record) {
+    pointerProvenanceCandidate = provenanceCandidate(record);
+  }
+  reconcileProvenanceCandidates();
+}
+
+function handlePointerProvenanceMove(inputEvent) {
+  if (!inputEvent.isTrusted) {
+    return;
+  }
+  pointerProvenanceArmed = true;
+  const target = inputEvent.target;
+  if (!(target instanceof Element)) {
+    return;
+  }
+  const occurrenceElement = target.closest(".ssa-occurrence");
+  if (occurrenceElement === null) {
+    return;
+  }
+  const record = occurrenceRecordByElement.get(occurrenceElement);
+  if (
+    record !== undefined &&
+    currentOccurrenceRecord(record) &&
+    pointerProvenanceCandidate?.record !== record
+  ) {
+    pointerProvenanceCandidate = provenanceCandidate(record);
+    reconcileProvenanceCandidates();
   }
 }
 
-function endPointerProvenance(sourceRecord) {
-  if (activePointerOccurrence === sourceRecord) {
-    clearProvenancePreview();
+function leavePointerProvenance(record, inputEvent) {
+  if (
+    inputEvent.isTrusted &&
+    pointerProvenanceCandidate?.record === record
+  ) {
+    pointerProvenanceCandidate = null;
+    reconcileProvenanceCandidates();
+  }
+}
+
+function promoteKeyboardProvenance(record) {
+  if (!currentOccurrenceRecord(record)) {
+    return;
+  }
+  if (keyboardProvenanceCandidate?.record !== record) {
+    keyboardProvenanceCandidate = provenanceCandidate(record);
+  }
+  reconcileProvenanceCandidates();
+}
+
+function handleProvenanceKeyDown(inputEvent) {
+  if (!inputEvent.isTrusted) {
+    return;
+  }
+  if (
+    inputEvent.key === "Tab" &&
+    !inputEvent.altKey &&
+    !inputEvent.ctrlKey &&
+    !inputEvent.metaKey
+  ) {
+    const token = Object.freeze({});
+    pendingTabFocusToken = token;
+    setTimeout(() => {
+      if (pendingTabFocusToken === token) {
+        pendingTabFocusToken = null;
+      }
+    }, 0);
+    return;
+  }
+  if (inputEvent.key !== "Enter" && inputEvent.key !== " ") {
+    return;
+  }
+  const target = inputEvent.target;
+  if (!(target instanceof Element)) {
+    return;
+  }
+  const occurrenceElement = target.closest(".ssa-occurrence");
+  if (
+    occurrenceElement === null ||
+    occurrenceElement !== document.activeElement
+  ) {
+    return;
+  }
+  const record = occurrenceRecordByElement.get(occurrenceElement);
+  if (record !== undefined) {
+    promoteKeyboardProvenance(record);
+  }
+}
+
+function handleProvenanceFocusIn(inputEvent) {
+  const token = pendingTabFocusToken;
+  pendingTabFocusToken = null;
+  if (token === null || suppressProgrammaticFocus) {
+    return;
+  }
+  const target = inputEvent.target;
+  if (!(target instanceof Element)) {
+    return;
+  }
+  const occurrenceElement = target.closest(".ssa-occurrence");
+  if (occurrenceElement === null) {
+    return;
+  }
+  const record = occurrenceRecordByElement.get(occurrenceElement);
+  if (record !== undefined) {
+    promoteKeyboardProvenance(record);
+  }
+}
+
+function handleProvenanceFocusOut(inputEvent) {
+  const target = inputEvent.target;
+  if (
+    keyboardProvenanceCandidate !== null &&
+    target === keyboardProvenanceCandidate.record.element
+  ) {
+    keyboardProvenanceCandidate = null;
+    scheduleProvenanceReconcile();
   }
 }
 
@@ -932,8 +1336,13 @@ function renderMetadataRecord(record, ordinal) {
 
 function renderMetadataOverlay(candidate) {
   const overlay = document.createElement("section");
-  overlay.id = "ssa-metadata-overlay";
+  const headingId = `ssa-metadata-heading-${overlayHeadingSequence}`;
+  overlayHeadingSequence += 1;
+  overlay.id = candidate.record.overlayId;
   overlay.className = "ssa-metadata-overlay";
+  overlay.tabIndex = 0;
+  overlay.setAttribute("role", "region");
+  overlay.setAttribute("aria-labelledby", headingId);
   overlay.dataset.anchorOccurrenceIds = candidate.record.bindings
     .map((binding) => binding.occurrence.id)
     .join(" ");
@@ -941,35 +1350,48 @@ function renderMetadataOverlay(candidate) {
   overlay.dataset.measuring = "true";
 
   const heading = document.createElement("h3");
-  heading.textContent = "SSA metadata";
+  const inventory = candidate.record.inventories[0];
+  const definingOwner =
+    inventory.entity.defining_owner_id === null
+      ? "absent"
+      : inventory.entity.defining_owner_id;
+  const roles = candidate.record.bindings
+    .map((binding) => binding.roleName)
+    .join(" | ");
+  heading.id = headingId;
+  heading.textContent =
+    `SSA metadata; occurrence label ${JSON.stringify(candidate.record.label)}; ` +
+    `entity ${inventory.entity.id}; defining owner ${definingOwner}; ` +
+    `state roles ${roles}.`;
   overlay.append(heading);
 
   const bindingHeading = document.createElement("h4");
   bindingHeading.textContent = "Logical bindings";
-  const bindings = document.createElement("dl");
+  const bindings = document.createElement("ol");
   bindings.className = "ssa-metadata-bindings";
   for (const [ordinal, binding] of candidate.record.bindings.entries()) {
-    const group = document.createElement("div");
+    const group = document.createElement("li");
+    const fields = document.createElement("dl");
     group.className = "ssa-metadata-binding";
     group.dataset.bindingOrdinal = String(ordinal);
-    appendMetadataField(group, "role", "State role", binding.roleName);
+    appendMetadataField(fields, "role", "State role", binding.roleName);
     appendMetadataField(
-      group,
+      fields,
       "snapshot-id",
       "Snapshot ID",
       binding.occurrence.snapshot_id,
     );
     appendMetadataField(
-      group,
+      fields,
       "occurrence-id",
       "Occurrence ID",
       binding.occurrence.id,
     );
+    group.append(fields);
     bindings.append(group);
   }
   overlay.append(bindingHeading, bindings);
 
-  const inventory = candidate.record.inventories[0];
   const inventorySection = document.createElement("section");
   inventorySection.className = "ssa-metadata-inventory";
   inventorySection.dataset.entityId = inventory.entity.id;
@@ -1012,7 +1434,6 @@ function placeMetadataOverlay(overlay, anchor) {
   const gap = 8;
   overlay.style.setProperty("--overlay-inline-start", "0px");
   overlay.style.setProperty("--overlay-block-start", "0px");
-  document.body.append(overlay);
 
   const viewportWidth = document.documentElement.clientWidth;
   const viewportHeight = document.documentElement.clientHeight;
@@ -1064,15 +1485,44 @@ function placeMetadataOverlay(overlay, anchor) {
   return true;
 }
 
+function focusAndReveal(target) {
+  suppressProgrammaticFocus = true;
+  pendingTabFocusToken = null;
+  target.focus({preventScroll: true});
+  target.scrollIntoView({
+    block: "nearest",
+    inline: "nearest",
+  });
+  setTimeout(() => {
+    suppressProgrammaticFocus = false;
+  }, 0);
+}
+
 function closeMetadataOverlay() {
-  if (activeMetadataOccurrence !== null) {
-    delete activeMetadataOccurrence.record.element.dataset.metadataActive;
-  }
-  if (activeMetadataOverlay !== null) {
-    activeMetadataOverlay.remove();
+  const closingOccurrence = activeMetadataOccurrence;
+  const closingOverlay = activeMetadataOverlay;
+  const focusedRegion =
+    closingOverlay !== null &&
+    closingOverlay.contains(document.activeElement);
+  if (closingOccurrence !== null) {
+    delete closingOccurrence.record.element.dataset.metadataActive;
+    closingOccurrence.record.element.setAttribute(
+      "aria-expanded",
+      "false",
+    );
   }
   activeMetadataOccurrence = null;
   activeMetadataOverlay = null;
+  if (closingOverlay !== null) {
+    closingOverlay.remove();
+  }
+  if (
+    focusedRegion &&
+    closingOccurrence !== null &&
+    currentOccurrenceRecord(closingOccurrence.record)
+  ) {
+    focusAndReveal(closingOccurrence.record.element);
+  }
 }
 
 function commitMetadataOccurrence(next) {
@@ -1084,10 +1534,12 @@ function commitMetadataOccurrence(next) {
     return;
   }
   const overlay = renderMetadataOverlay(next);
+  next.record.descriptionElement.after(overlay);
   if (!placeMetadataOverlay(overlay, next.record.element)) {
     return;
   }
   next.record.element.dataset.metadataActive = "true";
+  next.record.element.setAttribute("aria-expanded", "true");
   activeMetadataOccurrence = next;
   activeMetadataOverlay = overlay;
 }
@@ -1312,12 +1764,14 @@ function renderFacts(state) {
 
 function renderSelection(state) {
   dismissMetadataOccurrence();
-  clearProvenancePreview();
+  discardProvenanceCandidates();
   const visible = new Set(visibleEventIds(state));
   let hiddenCount = 0;
   for (const eventId of eventPreorder) {
+    const event = eventById.get(eventId);
     const row = eventRows.get(eventId);
     const button = eventButtons.get(eventId);
+    const description = eventDescriptions.get(eventId);
     const isVisible = visible.has(eventId);
     row.hidden = !isVisible;
     if (!isVisible) {
@@ -1333,6 +1787,11 @@ function renderSelection(state) {
     } else {
       delete button.dataset.rangeAnchor;
     }
+    description.textContent = eventDescription(
+      event,
+      Number(button.dataset.depth),
+      state.frontier.includes(eventId),
+    );
   }
   eventTree.dataset.frontier = state.frontier.join(" ");
   eventTree.dataset.anchor = state.anchor === null ? "" : state.anchor;
@@ -1351,6 +1810,7 @@ function renderSelection(state) {
   columns.replaceChildren(
     ...renderedColumnState.map((columnState) => columnState.element),
   );
+  refreshOccurrenceDescriptions();
   emptyWorkspace.hidden = state.frontier.length !== 0;
   renderFacts(state);
 
@@ -1364,6 +1824,23 @@ function renderSelection(state) {
 }
 
 let selectionState = freezeSelection([], null);
+
+function focusEventTargetBeforeRender(eventId, nextState) {
+  const nextVisible = visibleEventIds(nextState);
+  if (nextVisible.includes(eventId)) {
+    eventButtons.get(eventId).focus({preventScroll: true});
+    return;
+  }
+  const survivingTargetAncestors = nextState.frontier.filter((candidateId) =>
+    isStrictDescendant(eventId, candidateId),
+  );
+  if (survivingTargetAncestors.length !== 1) {
+    throw new Error("a swallowed target must have one surviving ancestor");
+  }
+  eventButtons
+    .get(survivingTargetAncestors[0])
+    .focus({preventScroll: true});
+}
 
 function activateEvent(eventId, inputEvent) {
   const visibleBefore = visibleEventIds(selectionState).slice();
@@ -1381,21 +1858,13 @@ function activateEvent(eventId, inputEvent) {
   if (nextState === selectionState) {
     return;
   }
+  focusEventTargetBeforeRender(eventId, nextState);
   selectionState = nextState;
   renderSelection(selectionState);
-
-  const targetRow = eventRows.get(eventId);
-  if (targetRow.hidden) {
-    const survivingTargetAncestors = selectionState.frontier.filter((candidateId) =>
-      isStrictDescendant(eventId, candidateId),
-    );
-    if (survivingTargetAncestors.length === 1) {
-      eventButtons.get(survivingTargetAncestors[0]).focus();
-    }
-  }
 }
 
 function clearCurrentSelection() {
+  clearSelection.focus({preventScroll: true});
   selectionState = reduceSelection(
     selectionState,
     {kind: "clear"},
@@ -1405,10 +1874,25 @@ function clearCurrentSelection() {
   clearSelection.focus({preventScroll: true});
 }
 
+function followSkipLink(inputEvent) {
+  inputEvent.preventDefault();
+  focusAndReveal(ssaWorkspace);
+}
+
+function clearPendingTabOnPointer() {
+  pendingTabFocusToken = null;
+}
+
 appendEventBranch(null, eventTree, 0);
 clearSelection.addEventListener("click", clearCurrentSelection);
+skipLink.addEventListener("click", followSkipLink);
 document.addEventListener("click", handleMetadataClick, true);
+document.addEventListener("keydown", handleProvenanceKeyDown, true);
 document.addEventListener("keydown", handleMetadataKey);
+document.addEventListener("focusin", handleProvenanceFocusIn, true);
+document.addEventListener("focusout", handleProvenanceFocusOut, true);
+document.addEventListener("pointerdown", clearPendingTabOnPointer, true);
+document.addEventListener("pointermove", handlePointerProvenanceMove, true);
 document.addEventListener("scroll", handleMetadataScroll, true);
 window.addEventListener("resize", dismissMetadataOccurrence);
 if (

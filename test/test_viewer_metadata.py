@@ -150,7 +150,7 @@ def _overlay_state(driver: Chrome) -> dict[str, Any]:
               bindingFields: Array.from(
                 overlay.querySelectorAll(".ssa-metadata-binding")
               ).map(binding => Array.from(
-                binding.querySelectorAll(":scope > .ssa-metadata-field")
+                binding.querySelectorAll(":scope > dl > .ssa-metadata-field")
               ).map(row => ({
                 field: row.dataset.field,
                 value: row.querySelector(":scope > dd").textContent
@@ -439,7 +439,10 @@ def test_every_rendered_occurrence_uses_its_exact_snapshot_owner_inventory(
                 assert len(type_records) == 1
                 assert type_records[0].value is not None
                 assert suffix == {
-                    "attributes": [["class", "ssa-metadata-suffix"]],
+                    "attributes": [
+                        ["class", "ssa-metadata-suffix"],
+                        ["aria-hidden", "true"],
+                    ],
                     "color": "rgb(125, 211, 252)",
                     "fontStyle": "italic",
                     "metadataToken": "#7dd3fc",
