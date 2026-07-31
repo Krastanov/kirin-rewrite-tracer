@@ -1,0 +1,85 @@
+[build-system]
+requires = ["hatchling==1.31.0"]
+build-backend = "hatchling.build"
+
+[project]
+name = "kirin-rewrite-tracer"
+version = "0.1.0"
+description = "Standalone tracing and offline inspection of Kirin rewrite activity."
+readme = "README.md"
+requires-python = ">=3.10,<3.14"
+dependencies = [
+  "kirin-toolchain @ git+https://github.com/QuEraComputing/kirin.git@7cdc2e02ab7ef0b3f80aaa88f930ff34015d240a",
+  "rich==15.0.0",
+]
+
+[dependency-groups]
+dev = [
+  "build>=1.3,<2",
+  "kirin-toolchain[vmath] @ git+https://github.com/QuEraComputing/kirin.git@7cdc2e02ab7ef0b3f80aaa88f930ff34015d240a",
+  "mypy>=1.17,<2",
+  "pre-commit>=4.3,<5",
+  "pytest>=8.4,<9",
+  "ruff>=0.12,<1",
+]
+
+[tool.hatch.metadata]
+allow-direct-references = true
+
+[tool.hatch.build.targets.sdist]
+include = [
+  "/.agents",
+  "/.github",
+  "/src",
+  "/test",
+  "/.gitignore",
+  "/.pre-commit-config.yaml",
+  "/AGENTS.md",
+  "/README.md",
+  "/pyproject.toml",
+  "/uv.lock",
+]
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/kirin_rewrite_tracer"]
+include = [
+  "src/kirin_rewrite_tracer/**/*.py",
+  "src/kirin_rewrite_tracer/assets/**/*.css",
+  "src/kirin_rewrite_tracer/assets/**/*.js",
+]
+
+[tool.mypy]
+python_version = "3.10"
+strict = true
+files = ["src", "test"]
+exclude = [
+  "^build/",
+  "^dist/",
+]
+
+[tool.pytest.ini_options]
+addopts = ["-ra", "--strict-config", "--strict-markers"]
+testpaths = ["test"]
+markers = [
+  "browser: requires the separately provisioned headed Chrome environment",
+]
+
+[tool.ruff]
+target-version = "py310"
+line-length = 88
+extend-exclude = [
+  ".browser-artifacts",
+  ".browser-cache",
+  "browser-artifacts",
+  "browser-cache",
+]
+
+[tool.ruff.lint]
+select = ["B", "E", "F", "I", "RUF", "SIM", "UP"]
+
+[tool.ruff.lint.isort]
+known-first-party = ["kirin_rewrite_tracer"]
+
+[tool.uv]
+default-groups = ["dev"]
+required-version = ">=0.12,<0.13"

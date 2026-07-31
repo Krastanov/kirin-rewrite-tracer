@@ -6,6 +6,9 @@ This file applies repository-wide. This is an independent repository inside the 
 development workspace; sibling repositories are evidence or dependencies, not code roots
 owned here.
 
+The Python library code root is `src/`, and the corresponding test root is the singular
+`test/` directory. Read the nested router in either root before changing files there.
+
 ## Start here
 
 - Open [the agent documentation index](.agents/index.md) to select only the material
@@ -43,8 +46,11 @@ owned here.
 
 ## Current boundaries
 
-- Python is the confirmed implementation language, but no code root, packaging tool, or
-  implementation framework has been selected. The current snapshot recommendation is a
+- The standalone Python package is `kirin_rewrite_tracer` under `src/`. Hatchling builds
+  it, uv resolves and runs its environment, and `test/` contains the pytest suite. The
+  package intentionally exposes no capture API until the relevant implementation
+  contracts are implemented.
+- The current snapshot recommendation is a
   renderer-neutral text, style-span, entity-occurrence, metadata-record, and
   partial-but-exact provenance model with neutral incomplete events, single-copy
   relations, and selected statement-deletion effects.
@@ -59,11 +65,16 @@ owned here.
   Definition-only type suffixes and one read-only metadata disclosure use a fixed dark
   semantic cascade; custom search/filter, graph views, themes, mobile layout, print, and
   UI persistence are outside v1.
-- Do not create package, source, test, or subsystem boundaries until the relevant
-  behavior and implementation decision are established.
 
 ## Commands
 
+- Create or update the development environment: `uv sync --python 3.13`
+- Run tests: `uv run pytest`
+- Run lint and formatting checks: `uv run ruff check .` and
+  `uv run ruff format --check .`
+- Run static typing: `uv run mypy src test`
+- Build distributions: `uv build`
+- Run repository hooks: `uv run pre-commit run --all-files`
 - Check patches: `git diff --check`
 - Validate repository documentation:
   `python3 ../.agents/skills/document-repository-v-model/scripts/lint_repository_docs.py . --fail-on-warn`

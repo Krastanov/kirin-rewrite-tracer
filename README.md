@@ -1,8 +1,9 @@
 # Kirin Rewrite Tracer
 
-This repository is being prepared as a developer-only Python library for inspecting the
-effects of Kirin rewrites during local debugging and tests. It remains documentation-only
-while observable behavior is established through short interview rounds.
+This repository contains a standalone, developer-only Python package for inspecting the
+effects of Kirin rewrites during local debugging and tests. The package and verification
+environment are scaffolded; capture and export APIs are introduced only with their
+corresponding implementation contracts.
 
 The canonical draft specification and verification map is the
 [repository V-model](.agents/v-model/index.md). Exact styled-presentation fidelity,
@@ -39,8 +40,9 @@ opens directly with only a local browser, makes no page-originated external requ
 preserves free-form trace content as inert data. Incomplete events retain their before
 states and completed activity without fabricated after states. V1's sole supported
   viewer environment is headed Chrome for Testing `151.0.7922.47`, revision `r1654411`,
-  `linux64` on x86-64 Linux. Other browser/platform support, the exact Python runtime
-  range, other callable forms, broader mutation coverage, and canonical trace
+  `linux64` on x86-64 Linux. Other browser/platform support, Python implementations or
+  versions outside CPython `>=3.10,<3.14`, other callable forms, broader mutation
+  coverage, and canonical trace
   persistence remain future work.
 
 The viewer keeps the event hierarchy in a leading tree column. Selecting a parent hides

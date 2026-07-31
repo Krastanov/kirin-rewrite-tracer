@@ -1,0 +1,39 @@
+# Python bytecode and environments
+__pycache__/
+*.py[cod]
+.python-version
+.venv/
+.wheel-venv/
+
+# Test, type-checker, lint, and coverage caches
+.coverage
+.coverage.*
+.mypy_cache/
+.pytest_cache/
+.ruff_cache/
+coverage.xml
+htmlcov/
+
+# Build products
+build/
+dist/
+*.egg-info/
+
+# Browser downloads, profiles, and generated evidence
+.browser-artifacts/
+.browser-cache/
+.cache/
+.chrome-profile/
+.chromedriver/
+.selenium/
+browser-artifacts/
+browser-cache/
+reports/
+screenshots/
+test-results/
+
+# Local editor and operating-system files
+.DS_Store
+.idea/
+.vscode/
+*.swp

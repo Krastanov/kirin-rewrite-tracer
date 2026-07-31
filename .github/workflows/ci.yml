@@ -1,0 +1,64 @@
+name: CI
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  source:
+    name: Python ${{ matrix.python-version }}
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        python-version: ["3.10", "3.11", "3.12", "3.13"]
+    steps:
+      - uses: actions/checkout@v7
+      - name: Install uv
+        uses: astral-sh/setup-uv@v7
+        with:
+          version: "0.12.0"
+          enable-cache: true
+          cache-dependency-glob: uv.lock
+      - name: Install Python
+        run: uv python install ${{ matrix.python-version }}
+      - name: Sync the locked environment
+        run: uv sync --locked --python ${{ matrix.python-version }}
+      - name: Test
+        run: uv run --frozen pytest
+
+  quality:
+    name: Quality and distributions
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - name: Install uv
+        uses: astral-sh/setup-uv@v7
+        with:
+          version: "0.12.0"
+          enable-cache: true
+          cache-dependency-glob: uv.lock
+      - name: Install Python
+        run: uv python install 3.13
+      - name: Sync the locked environment
+        run: uv sync --locked --python 3.13
+      - name: Lint, format, and type-check
+        run: |
+          uv run --frozen ruff check .
+          uv run --frozen ruff format --check .
+          uv run --frozen mypy src test
+      - name: Run repository hooks
+        run: uv run --frozen pre-commit run --all-files
+      - name: Build distributions
+        run: uv build
+      - name: Smoke-test the wheel
+        run: |
+          uv venv --python 3.13 .wheel-venv
+          uv pip install --python .wheel-venv/bin/python dist/*.whl
+          .wheel-venv/bin/python -c "import importlib.metadata; import kirin_rewrite_tracer; assert importlib.metadata.version('kirin-rewrite-tracer') == '0.1.0'"
