@@ -32,10 +32,10 @@ oracles.
   facts region, overlays, highlights, and the focused control. Select another row after
   Clear to verify the anchor restarted null.
   With child metadata and provenance detail active, select its parent; inventory rows
-  and pointer, keyboard, selection, and accessibility targets; and look for an
-  independent descendant-disclosure control. Exclude the parent through a subsequent
-  selection and compare restoration with the original hierarchy and order. Repeat at
-  child/grandchild depth and with the incomplete parent.
+  and pointer, keyboard, selection, and accessibility targets; and confirm that the
+  SYS-025 collapse control of every event in that subtree is disabled and inert. Exclude
+  the parent through a subsequent selection and compare restoration with the original
+  hierarchy and order. Repeat at child/grandchild depth and with the incomplete parent.
   Then exercise complete/no-op/complete with two equal handoffs, an incomplete
   predecessor, and a complete predecessor followed by an incomplete successor with an
   equal before state. Compare columns with an independent semantic snapshot oracle.
@@ -64,7 +64,7 @@ oracles.
   retained. Drag alone changes neither selection nor anchor.
   Selecting an ancestor atomically removes selected descendants and hides every strict
   descendant row at every depth before presentation; no descendant control,
-  interaction/accessibility target, or disclosure mechanism remains. Descendant
+  interaction/accessibility target, or enabled disclosure mechanism remains. Descendant
   columns, highlights, and overlays clear. Only the parent's before then
   after-or-absent pair appears, and child-only content stays absent. Excluding the parent
   restores every row at its exact original position, eligible but unselected and without
@@ -77,8 +77,9 @@ oracles.
   event retains two distinct two-role handoff columns. An absent predecessor after-state
   never shares, while an incomplete successor's existing before-state may share with an
   equal predecessor after-state. Every Clear produces an empty frontier and null anchor,
-  restores every row in original order, removes all derived state, leaves the explicit
-  no-selection facts state, and retains focus on Clear; repeated Clear is idempotent.
+  restores every row collapse does not hide in original order, removes all derived
+  state, leaves the explicit no-selection facts state, and retains focus on Clear;
+  repeated Clear is idempotent.
   The next row activation selects normally and event rows retain their non-toggle
   behavior.
 - **Status:** implemented

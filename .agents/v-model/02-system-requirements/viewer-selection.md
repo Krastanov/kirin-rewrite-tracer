@@ -2,7 +2,8 @@
 
 The event tree, deterministic contiguous selection, automatic descendant-row hiding,
 parent-dominant logical event pairs, and exact-equal handoff columns are confirmed.
-Keyboard/focus behavior and visual presentation are specified by SYS-023 and SYS-024.
+Subtree collapse is specified by SYS-025; keyboard/focus behavior and visual
+presentation are specified by SYS-023 and SYS-024.
 
 ## SYS-020 — Present an event-tree and contiguous SSA workspace
 
@@ -31,18 +32,20 @@ Keyboard/focus behavior and visual presentation are specified by SYS-023 and SYS
   behavior. Pointer movement or drag without a click shall not change tracer selection.
   Selecting an event shall atomically deselect strict descendants, clear their derived
   state, and hide their rows transitively before presentation. Hidden descendants shall
-  expose no row, disclosure control, or manual or accessibility target; no separate
-  disclosure state shall reveal them while the ancestor is selected. A later action
-  that excludes that ancestor shall restore the original hierarchy and order, eligible
-  but unselected, without stale state. Selected events or coarse subtree units shall
-  form one consecutive displayed tree range; hidden descendants shall create neither a
-  gap nor a state.
+  expose no row, enabled disclosure control, or manual or accessibility target; no
+  disclosure state, including the independent SYS-025 collapse state, shall reveal them
+  while the ancestor is selected. A later action that excludes that ancestor shall
+  restore the original hierarchy and order, eligible but unselected, without stale
+  state, except for rows the SYS-025 collapse state still hides. Selected events or
+  coarse subtree units shall form one consecutive displayed tree range; hidden
+  descendants shall create neither a gap nor a state.
   An always-available native `Clear selection` button shall atomically empty the
   frontier, set the anchor to null, clear every derived column, highlight, overlay, and
-  descendant state, and restore the complete original event hierarchy unselected.
-  Clear shall remain available with zero selection and repeated activation shall be
-  idempotent. It shall not change the confirmed non-toggle behavior of event-row
-  activation.
+  descendant state, and restore every event row that the SYS-025 collapse state does not
+  hide, unselected. Clear owns selection alone and shall leave that collapse state
+  unchanged. Clear shall remain available with zero selection and repeated activation
+  shall be idempotent. It shall not change the confirmed non-toggle behavior of
+  event-row activation.
   To the right, each frontier event shall retain its logical styled `before` then
   `after`, or explicit absent-after, pair. At a boundary between consecutive selected
   events `A` and `B`, the view shall render `A.after` and `B.before` once as one
@@ -76,7 +79,7 @@ Keyboard/focus behavior and visual presentation are specified by SYS-023 and SYS
   In an asymmetric depth-three tree with complete, no-op, and incomplete events,
   initial hierarchy and order match independent data. Selecting a leaf then its
   ancestor removes every strict descendant row and target, clears descendant detail and
-  columns, exposes no disclosure mechanism, and leaves only the ancestor pair. A
+  columns, exposes no enabled disclosure mechanism, and leaves only the ancestor pair. A
   nondescendant sibling remains eligible. In a consecutive coarse range, separately
   retained exact-equal `A.after` and `B.before` payloads produce exactly one
   always-visible dual-labelled shared column while their two logical records and
@@ -89,8 +92,9 @@ Keyboard/focus behavior and visual presentation are specified by SYS-023 and SYS
   may share its existing before state with an equal predecessor after state. No
   incomplete event acquires an after state. Activating Clear from singleton,
   multi-event, parent-dominant, and already-clear states yields an empty frontier and
-  null anchor, restores every row in original order, and removes all derived state;
-  selecting a row afterward starts from a null anchor while repeated Clear is inert.
+  null anchor, restores every row collapse does not hide in original order, leaves the
+  collapse state unchanged, and removes all derived state; selecting a row afterward
+  starts from a null anchor while repeated Clear is inert.
 - **Verification:** SYSV-020 (test)
 - **Origin / risk:** Developer confirmations, 2026-07-30; post-action range coordinates,
   additive or toggling gestures, hidden anchors, exposed descendant controls, stale

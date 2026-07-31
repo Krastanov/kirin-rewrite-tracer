@@ -20,7 +20,7 @@ V1 uses native document controls, not a custom ARIA tree, grid, or dialog.
   status region shall announce one of these exact ordered schemas: `Selected: 0; hidden:
   H.`, `Selected: 1; event: E; hidden: H.`, or `Selected: N; first: E1; last: E2;
   hidden: H.`, where the values are the selected frontier count, displayed event IDs,
-  and total descendants hidden by parent dominance.
+  and the rows hidden by parent dominance or SYS-025 collapse.
   After event activation, focus shall remain on the target if it survives
   normalization. If a selected ancestor hides that target, focus shall move before
   presentation to the unique surviving selected ancestor. Hiding only the range anchor

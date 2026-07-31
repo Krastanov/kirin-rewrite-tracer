@@ -67,8 +67,14 @@ The public root exports are `trace_rewrites`, `export_html`, `Trace`,
   pixels high, other browsers/platforms, headless, mobile, and touch carry no v1 claim.
 
 The viewer provides native event and occurrence controls, an always-available Clear
-selection button, selected-event canonical facts, exact neighboring provenance,
-definition metadata, keyboard/focus handling, and the fixed dark cascade.
+selection button, a per-non-leaf-event collapse control, selected-event canonical facts,
+exact neighboring provenance, definition metadata, keyboard/focus handling, and the
+fixed dark cascade.
+
+A collapse control hides its event's whole subtree and never reveals a row that a
+selected ancestor hides. It is enabled only while no selected event lies in its own
+subtree, counting the event itself, so collapsing can never hide the selection or the
+Shift-range anchor. Clear selection leaves collapse state untouched.
 
 ## Known nonconformances
 

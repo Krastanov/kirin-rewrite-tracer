@@ -18,6 +18,8 @@ The system layer is split by retrieval topic:
 - [Event selection and SSA columns](viewer-selection.md) — deterministic plain and
   Shift-range gestures, automatic descendant hiding, and exact-equal dual-role
   handoffs.
+- [Event subtree collapse](viewer-collapse.md) — one selection-subordinate disclosure
+  control per non-leaf row, its eligibility rule, and its accessible naming.
 - [Neighboring-column provenance viewer](viewer-provenance.md) — edge-scoped identity
   and exact selected-mutation highlighting.
 - [SSA metadata viewer](metadata-viewer.md) — definition-only SSA-type suffixes and one
@@ -31,8 +33,9 @@ The uniform event model, hierarchy, ordinary synchronous public-entry support ca
 minor-version-generic detector constraint, and partial-but-exact provenance boundary are
 confirmed, as is one self-contained HTML export for complete and incomplete traces with
 the first tree-and-column interaction model and its narrow exact-handoff snapshot
-equality. V1's browser target, native-control keyboard model, focus behavior, and fixed
-dark cascade are also confirmed. The CPython `>=3.10,<3.14` range, normalized snapshot
+equality. V1's browser target, native-control keyboard model, focus behavior, fixed
+dark cascade, and one collapse control that is enabled only when its subtree holds no
+selected event are also confirmed. The CPython `>=3.10,<3.14` range, normalized snapshot
 comparison, atomic unsupported-use invalidation, no-overwrite export, native Clear
 selection, selected-event canonical facts, and explicit presentation floor are
 baselined in the subsystem and component contracts.

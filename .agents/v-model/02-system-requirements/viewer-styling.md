@@ -26,9 +26,13 @@ styles remain faithful and separate.
   provenance-related occurrence shall retain a fixed surface wrapper and all captured
   SSA styling while adding a
   non-layout-shifting two-pixel inset provenance box-shadow ring. That ring and the
-  independent outer focus outline shall remain simultaneously visible. State remains
+  independent outer focus outline shall remain simultaneously visible. Each SYS-025
+  collapse button shall lead its row in one no-wrap row box, carry a fixed-width
+  expanded or collapsed marker glyph, and, while disabled, use muted text with a dashed
+  border rather than any hue-only difference. State remains
   identifiable without hue through marker geometry, suffix delimiters and italics, ring
-  geometry, textual shared-column and absent-state labels, and the focus outline.
+  geometry, collapse glyph and border geometry, textual shared-column and absent-state
+  labels, and the focus outline.
   A single embedded stylesheet shall define one root token set and shared base, layout,
   component, and final state rules. Viewer JavaScript shall change semantic attributes
   or shared classes rather than write presentation per event or occurrence. Ordinary
@@ -64,8 +68,10 @@ styles remain faithful and separate.
   shared-handoff, overlay, and combined states, computed colors equal the declared
   tokens and independently calculated unrounded contrast meets the exact adjacency
   matrix above. Selection has both its supplemental fill and authoritative three-pixel
-  marker; focus has its independent two-pixel offset outline. Every definition suffix is
-  exactly
+  marker; focus has its independent two-pixel offset outline. A disabled collapse button
+  computes muted text and a dashed border where an enabled one computes primary text and
+  a solid border, and neither state wraps, reorders, or resizes its row. Every
+  definition suffix is exactly
   ` ⟦<retained-type-text>⟧` in metadata color and italics, including the empty
   ` ⟦⟧`, and references have none. Every related occurrence gains the provenance
   ring without changing any captured character, foreground, background, weight,

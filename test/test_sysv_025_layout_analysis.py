@@ -9,10 +9,10 @@ _EVIDENCE = _ROOT / ".agents" / "v-model" / "evidence" / "sysv-025-layout-invari
 _VERIFICATION = _ROOT / ".agents" / "v-model" / "verification" / "viewer-styling.md"
 _REVIEWED = {
     "src/kirin_rewrite_tracer/assets/viewer.css": (
-        "aa4e8ae2c12e099b314135b05115a13417d8a8076d570bd6c9693b67b38c9087"
+        "9146e62939e9f76ff2a0d6bfe112a67ca512775c4ec4ad11f3f44868f4f06a11"
     ),
     "src/kirin_rewrite_tracer/assets/viewer.js": (
-        "ec868f7a9ab02cbccde4c7e667f614681b4e0ba9700e0eb81a0fb19b7e19adf3"
+        "97ddeb29073909709fd204ee7dc3b61e3ad8ba64b367278406f048a9f76568ac"
     ),
     "src/kirin_rewrite_tracer/_export.py": (
         "d8acfd848a1043e08658349c71cd8cf470042d2be25c9123d97474dc2c796260"

@@ -106,28 +106,34 @@ These are logical boundaries, not package or file topology.
 
 - **Normative statement:** Pure derived state shall implement the parent-dominant
   non-toggle frontier and pre-action Shift ranges; always-available Clear empties
-  frontier/anchor, clears derived state, and restores rows. Columns preserve logical
+  frontier/anchor, clears derived state, and restores rows. One independent collapse
+  state hides non-leaf subtrees, composes with parent dominance as a union that never
+  reveals, and admits a transition only for a displayed non-leaf event whose subtree
+  holds no selected event. Columns preserve logical
   roles, exact two-role handoffs, absent barriers, and nontransitive equality. Provenance
   uses rebuilt indexes, exact identity/one-hop edge policy, both directions, side-isolated
   shared columns, and unmatched endpoints. The always-visible selected-event facts
   region exposes every owned field/absence without copying descendant facts to a parent.
-- **Parents:** SYS-019, SYS-020, SYS-021, SYS-022
-- **Acceptance criterion:** All click/range/Clear, equality, barrier, neighbor, shared,
-  unmatched, and ownership fixtures match independent reducers; zero selection names no
-  event and each selection exposes exactly its canonical inventory.
+- **Parents:** SYS-019, SYS-020, SYS-021, SYS-022, SYS-025
+- **Acceptance criterion:** All click/range/Clear, collapse-eligibility, equality,
+  barrier, neighbor, shared, unmatched, and ownership fixtures match independent
+  reducers; zero selection names no event and each selection exposes exactly its
+  canonical inventory.
 - **Verification:** INTV-007 (test)
 
 ## SUB-008 — Preserve accessibility, focus, and fixed presentation
 
-- **Normative statement:** Native event, occurrence, skip, and Clear controls; labelled
-  workspace and facts; polite status; and one nonmodal metadata region shall share
-  reducers across pointer/keyboard input. Clear keeps focus; removal uses deterministic
-  fallback and discards stale overlay/provenance state. One fixed cascade preserves
-  SYS-024 contrast, non-color cues, Rich projection, and consecutive no-wrap scrolling.
-  V1 supports measured CSS viewports at least `640 × 480` at 100%/200% zoom and makes no
-  claim below either dimension.
-- **Parents:** SYS-020, SYS-022, SYS-023, SYS-024
-- **Acceptance criterion:** Native-order, parity, Clear, fallback, overlay/candidate,
-  style/contrast, boundary, and varied larger-viewport oracles pass without detached
-  state, wrapping, clipping, reordering, or below-floor support claims.
+- **Normative statement:** Native event, occurrence, collapse, skip, and Clear controls;
+  labelled workspace and facts; polite status; and one nonmodal metadata region shall
+  share reducers across pointer/keyboard input. Clear and collapse keep focus; removal
+  uses deterministic
+  fallback and discards stale overlay/provenance state. A natively disabled collapse
+  control leaves sequential focus order and rejects every activation. One fixed cascade
+  preserves SYS-024 contrast, non-color cues, Rich projection, and consecutive no-wrap
+  scrolling. V1 supports measured CSS viewports at least `640 × 480` at 100%/200% zoom
+  and makes no claim below either dimension.
+- **Parents:** SYS-020, SYS-022, SYS-023, SYS-024, SYS-025
+- **Acceptance criterion:** Native-order, parity, Clear, collapse-eligibility, fallback,
+  overlay/candidate, style/contrast, boundary, and varied larger-viewport oracles pass
+  without detached state, wrapping, clipping, reordering, or below-floor support claims.
 - **Verification:** INTV-008 (test)

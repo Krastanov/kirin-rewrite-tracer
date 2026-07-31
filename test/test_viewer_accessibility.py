@@ -855,7 +855,7 @@ def test_suspended_candidates_do_not_survive_shared_role_transitions(
             ctrlKey: false,
             metaKey: false
           },
-          visibleEventIds(selectionState).slice()
+          visibleEventIds(selectionState, collapseState).slice()
         );
         selectionState = next;
         renderSelection(selectionState);
@@ -911,7 +911,7 @@ def test_suspended_candidates_do_not_survive_shared_role_transitions(
             ctrlKey: false,
             metaKey: false
           },
-          visibleEventIds(selectionState).slice()
+          visibleEventIds(selectionState, collapseState).slice()
         );
         selectionState = next;
         renderSelection(selectionState);

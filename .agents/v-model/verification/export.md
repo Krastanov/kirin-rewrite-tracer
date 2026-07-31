@@ -33,12 +33,13 @@ Pass only with durable evidence covering every criterion; omit transient logs.
   their original owners and no absent after state is filled from another event. Plain
   click selects exactly one row without toggling it off; Shift-click inclusively expands
   or contracts from its retained anchor and replaces the prior range. Clear empties the
-  frontier and anchor, restores all rows, removes derived state, and retains its focus.
+  frontier and anchor, restores every row the SYS-025 collapse control does not hide,
+  removes derived state, and retains its focus.
   The selected-event facts region exposes exact canonical ownership and explicit absence
   without copying descendant facts. Tree, hover,
   suffix, and overlay interactions support the prescribed inspection. Parent selection
   hides every descendant row, and a later excluding selection restores the original
-  hierarchy unselected. The shared handoff is always labelled with both roles and keeps
+  hierarchy unselected except where a collapse control still hides a row. The shared handoff is always labelled with both roles and keeps
   `A` facts left and `B` facts right; the separate handoff uses identity-only
   cross-boundary hover. The keyboard-only pass reaches the same facts and exact
   selection, provenance, and metadata states without detached focus. Viewer-authored

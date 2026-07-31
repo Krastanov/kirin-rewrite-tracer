@@ -45,6 +45,8 @@ const classesByStyle = new Map();
 const eventButtons = new Map();
 const eventRows = new Map();
 const eventDescriptions = new Map();
+const eventCollapseToggles = new Map();
+const eventCollapseMarkers = new Map();
 const occurrenceRecordByElement = new WeakMap();
 const neighborProjectionByRecord = new WeakMap();
 
@@ -243,12 +245,69 @@ function freezeSelection(frontier, anchor) {
   });
 }
 
-function visibleEventIds(state) {
+function childEvents(eventId) {
+  return childrenByParent.get(eventId) || [];
+}
+
+/*
+ * Collapse is one independent monotonically hiding disclosure state. It never
+ * reveals a row that parent dominance hides, so the two rules compose as a union.
+ */
+function freezeCollapse(eventIds) {
+  const ordered = orderedUnique(eventIds);
+  if (ordered.length !== new Set(eventIds).size) {
+    throw new Error("collapsed events must be unique retained events");
+  }
+  for (const eventId of ordered) {
+    if (childEvents(eventId).length === 0) {
+      throw new Error("only a non-leaf event can be collapsed");
+    }
+  }
+  return Object.freeze(ordered);
+}
+
+/*
+ * A control is enabled only when its own subtree, including the event itself,
+ * holds no selected event, so no transition can hide the frontier or the anchor.
+ */
+function collapseEligible(eventId, state) {
+  return (
+    childEvents(eventId).length > 0 &&
+    !state.frontier.some(
+      (selectedId) =>
+        selectedId === eventId || isStrictDescendant(selectedId, eventId),
+    )
+  );
+}
+
+function visibleEventIds(state, collapsed) {
   return eventPreorder.filter(
     (eventId) =>
       !state.frontier.some((selectedId) =>
         isStrictDescendant(eventId, selectedId),
+      ) &&
+      !collapsed.some((collapsedId) =>
+        isStrictDescendant(eventId, collapsedId),
       ),
+  );
+}
+
+function reduceCollapse(current, input, state, visibleBefore) {
+  if (input.kind !== "toggle") {
+    return current;
+  }
+  const targetId = input.targetId;
+  if (
+    !eventById.has(targetId) ||
+    !visibleBefore.includes(targetId) ||
+    !collapseEligible(targetId, state)
+  ) {
+    return current;
+  }
+  return freezeCollapse(
+    current.includes(targetId)
+      ? current.filter((eventId) => eventId !== targetId)
+      : [...current, targetId],
   );
 }
 
@@ -432,26 +491,55 @@ function reduceAdjacentEdge(leftColumn, rightColumn) {
 }
 
 let eventDescriptionSequence = 0;
+let childListSequence = 0;
 let occurrenceControlSequence = 0;
 let columnSequence = 0;
 let overlayHeadingSequence = 0;
 
 function eventDescription(event, depth, selected) {
-  const siblings = childrenByParent.get(event.parent_id) || [];
+  const siblings = childEvents(event.parent_id);
   const sibling = siblings.indexOf(event) + 1;
   const parent =
     event.parent_id === null ? "absent" : event.parent_id;
   return `Event ${event.id}; rule ${event.rule_type}; depth ${depth}; parent ${parent}; sibling ${sibling} of ${siblings.length}; completion ${event.completion}; selection ${selected ? "selected" : "unselected"}.`;
 }
 
+function collapseLabel(event, collapsed, eligible) {
+  const action = collapsed ? "Expand" : "Collapse";
+  const availability = eligible
+    ? ""
+    : "; unavailable while its subtree contains a selected event";
+  return `${action} event ${event.id} children${availability}.`;
+}
+
+function appendCollapseToggle(row, event, childListId) {
+  const toggle = document.createElement("button");
+  const marker = document.createElement("span");
+  toggle.type = "button";
+  toggle.className = "event-collapse";
+  toggle.dataset.eventId = event.id;
+  toggle.setAttribute("aria-controls", childListId);
+  marker.className = "event-collapse-marker";
+  marker.setAttribute("aria-hidden", "true");
+  toggle.append(marker);
+  toggle.addEventListener("click", () => {
+    toggleEventCollapse(event.id);
+  });
+  eventCollapseToggles.set(event.id, toggle);
+  eventCollapseMarkers.set(event.id, marker);
+  row.append(toggle);
+}
+
 function appendEventBranch(parentId, list, depth) {
-  for (const event of childrenByParent.get(parentId) || []) {
+  for (const event of childEvents(parentId)) {
     const item = document.createElement("li");
     item.dataset.eventId = event.id;
+    const row = document.createElement("div");
     const button = document.createElement("button");
     const description = document.createElement("span");
     const descriptionId = `event-description-${eventDescriptionSequence}`;
     eventDescriptionSequence += 1;
+    row.className = "event-row";
     button.type = "button";
     button.className = "event-button";
     button.dataset.eventId = event.id;
@@ -468,12 +556,19 @@ function appendEventBranch(parentId, list, depth) {
     eventButtons.set(event.id, button);
     eventRows.set(event.id, item);
     eventDescriptions.set(event.id, description);
-    item.append(button, description);
-    const children = childrenByParent.get(event.id) || [];
+    const children = childEvents(event.id);
     if (children.length > 0) {
       const childList = document.createElement("ol");
+      childList.id = `event-children-${childListSequence}`;
+      childListSequence += 1;
+      appendCollapseToggle(row, event, childList.id);
+      row.append(button, description);
+      item.append(row);
       appendEventBranch(event.id, childList, depth + 1);
       item.append(childList);
+    } else {
+      row.append(button, description);
+      item.append(row);
     }
     list.append(item);
   }
@@ -1764,10 +1859,8 @@ function renderFacts(state) {
   factsEmpty.hidden = true;
 }
 
-function renderSelection(state) {
-  dismissMetadataOccurrence();
-  discardProvenanceCandidates();
-  const visible = new Set(visibleEventIds(state));
+function renderEventTree(state, collapsed) {
+  const visible = new Set(visibleEventIds(state, collapsed));
   let hiddenCount = 0;
   for (const eventId of eventPreorder) {
     const event = eventById.get(eventId);
@@ -1794,10 +1887,37 @@ function renderSelection(state) {
       Number(button.dataset.depth),
       state.frontier.includes(eventId),
     );
+
+    const toggle = eventCollapseToggles.get(eventId);
+    if (toggle !== undefined) {
+      const isCollapsed = collapsed.includes(eventId);
+      const eligible = collapseEligible(eventId, state);
+      toggle.disabled = !eligible;
+      toggle.dataset.collapsed = isCollapsed ? "true" : "false";
+      toggle.setAttribute("aria-expanded", isCollapsed ? "false" : "true");
+      toggle.setAttribute(
+        "aria-label",
+        collapseLabel(event, isCollapsed, eligible),
+      );
+      eventCollapseMarkers.get(eventId).textContent = isCollapsed
+        ? "▸"
+        : "▾";
+    }
   }
   eventTree.dataset.frontier = state.frontier.join(" ");
   eventTree.dataset.anchor = state.anchor === null ? "" : state.anchor;
+  eventTree.dataset.collapsed = collapsed.join(" ");
 
+  if (state.frontier.length === 0) {
+    selectionStatus.textContent = `Selected: 0; hidden: ${hiddenCount}.`;
+  } else if (state.frontier.length === 1) {
+    selectionStatus.textContent = `Selected: 1; event: ${state.frontier[0]}; hidden: ${hiddenCount}.`;
+  } else {
+    selectionStatus.textContent = `Selected: ${state.frontier.length}; first: ${state.frontier[0]}; last: ${state.frontier[state.frontier.length - 1]}; hidden: ${hiddenCount}.`;
+  }
+}
+
+function renderWorkspace(state) {
   const reducedColumns = reduceColumns(state.frontier);
   renderedColumnState = Object.freeze(
     reducedColumns.map((column, index) => renderColumn(column, index)),
@@ -1815,20 +1935,20 @@ function renderSelection(state) {
   refreshOccurrenceDescriptions();
   emptyWorkspace.hidden = state.frontier.length !== 0;
   renderFacts(state);
+}
 
-  if (state.frontier.length === 0) {
-    selectionStatus.textContent = `Selected: 0; hidden: ${hiddenCount}.`;
-  } else if (state.frontier.length === 1) {
-    selectionStatus.textContent = `Selected: 1; event: ${state.frontier[0]}; hidden: ${hiddenCount}.`;
-  } else {
-    selectionStatus.textContent = `Selected: ${state.frontier.length}; first: ${state.frontier[0]}; last: ${state.frontier[state.frontier.length - 1]}; hidden: ${hiddenCount}.`;
-  }
+function renderSelection(state) {
+  dismissMetadataOccurrence();
+  discardProvenanceCandidates();
+  renderEventTree(state, collapseState);
+  renderWorkspace(state);
 }
 
 let selectionState = freezeSelection([], null);
+let collapseState = freezeCollapse([]);
 
 function focusEventTargetBeforeRender(eventId, nextState) {
-  const nextVisible = visibleEventIds(nextState);
+  const nextVisible = visibleEventIds(nextState, collapseState);
   if (nextVisible.includes(eventId)) {
     eventButtons.get(eventId).focus({preventScroll: true});
     return;
@@ -1845,7 +1965,7 @@ function focusEventTargetBeforeRender(eventId, nextState) {
 }
 
 function activateEvent(eventId, inputEvent) {
-  const visibleBefore = visibleEventIds(selectionState).slice();
+  const visibleBefore = visibleEventIds(selectionState, collapseState).slice();
   const nextState = reduceSelection(
     selectionState,
     {
@@ -1870,10 +1990,37 @@ function clearCurrentSelection() {
   selectionState = reduceSelection(
     selectionState,
     {kind: "clear"},
-    visibleEventIds(selectionState),
+    visibleEventIds(selectionState, collapseState),
   );
   renderSelection(selectionState);
   clearSelection.focus({preventScroll: true});
+}
+
+/*
+ * Collapse changes no selection, column, overlay, or provenance state, so it
+ * repaints only the event hierarchy.
+ */
+function toggleEventCollapse(eventId) {
+  const nextCollapsed = reduceCollapse(
+    collapseState,
+    {kind: "toggle", targetId: eventId},
+    selectionState,
+    visibleEventIds(selectionState, collapseState),
+  );
+  if (nextCollapsed === collapseState) {
+    return;
+  }
+  const nextVisible = visibleEventIds(selectionState, nextCollapsed);
+  if (
+    !selectionState.frontier.every((selectedId) =>
+      nextVisible.includes(selectedId),
+    )
+  ) {
+    throw new Error("collapsing must never hide a selected event");
+  }
+  collapseState = nextCollapsed;
+  renderEventTree(selectionState, collapseState);
+  eventCollapseToggles.get(eventId).focus({preventScroll: true});
 }
 
 function followSkipLink(inputEvent) {

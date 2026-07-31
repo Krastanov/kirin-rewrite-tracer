@@ -9,8 +9,8 @@ it does not prove the universal requirement. A changed digest requires renewed r
 
 | Source | SHA-256 |
 | --- | --- |
-| `src/kirin_rewrite_tracer/assets/viewer.css` | `aa4e8ae2c12e099b314135b05115a13417d8a8076d570bd6c9693b67b38c9087` |
-| `src/kirin_rewrite_tracer/assets/viewer.js` | `ec868f7a9ab02cbccde4c7e667f614681b4e0ba9700e0eb81a0fb19b7e19adf3` |
+| `src/kirin_rewrite_tracer/assets/viewer.css` | `9146e62939e9f76ff2a0d6bfe112a67ca512775c4ec4ad11f3f44868f4f06a11` |
+| `src/kirin_rewrite_tracer/assets/viewer.js` | `97ddeb29073909709fd204ee7dc3b61e3ad8ba64b367278406f048a9f76568ac` |
 | `src/kirin_rewrite_tracer/_export.py` | `d8acfd848a1043e08658349c71cd8cf470042d2be25c9123d97474dc2c796260` |
 | `src/kirin_rewrite_tracer/_encoding.py` | `434d433816772498a7de53e7c970f87cc93da955d7790fe3be5fe5fcc383f8aa` |
 | `src/kirin_rewrite_tracer/_model.py` | `a9f1a5298dc1fd94f0b3229a09110fda6389785e6138c99a004b01cdda88e4f3` |
@@ -37,6 +37,13 @@ The complete reviewed set of normal-flow and intrinsic-inline-size inputs is:
   the shared `0.75rem` padding and one-pixel border;
 - one-rem event-tree indentation, row margins, full-width no-wrap event buttons, and
   button `0.4rem 0.6rem` padding/one-pixel border;
+- each `.event-row`: a row `flex`, `nowrap`, stretch-aligned box with a `0.35rem` gap
+  whose optional leading `.event-collapse` is a nonshrinking `2rem` no-wrap item, so the
+  event column's max-content contribution per row is that fixed item plus the gap plus
+  the button's own no-wrap text; the button's `100%` inline size resolves against that
+  row and shrinks by exactly the leading item, never below its own text;
+- the disabled collapse rule changes only foreground color and border style, and the
+  marker glyph swap stays inside the fixed `2rem` item;
 - no-wrap heading flex rows and their `0.75rem` gap;
 - `.trace-code`: `ui-monospace, monospace` and `white-space: pre`; generated Rich
   weight/italics can affect glyph metrics, while color/background/decoration do not
@@ -62,12 +69,17 @@ There is no media/container query, viewport script branch, grid alternative, wra
 
 The complete reviewed JavaScript mutation set relevant to geometry is:
 
-- `renderSelection` maps frontier-ordered columns once through `renderColumn`, then
-  replaces `.ssa-columns` in that order;
+- `renderWorkspace` maps frontier-ordered columns once through `renderColumn`, then
+  replaces `.ssa-columns` in that order; `renderSelection` calls it after
+  `renderEventTree`, and the collapse path calls `renderEventTree` alone, so a collapse
+  transition performs no column mutation at all;
 - `renderColumn` adds semantic classes and a heading plus absent label or code;
-- selection changes which event rows are `hidden` and therefore may change the event
-  hierarchy's max-content width, but it never moves the leading event column or changes
-  the reducer's SSA column order;
+- selection and collapse change which event rows are `hidden` and therefore may change
+  the event hierarchy's max-content width, but neither moves the leading event column
+  nor changes the reducer's SSA column order;
+- `renderEventTree` additionally sets each collapse button's `disabled`, `aria-expanded`,
+  `aria-label`, `data-collapsed`, and marker text; only the marker text can affect
+  intrinsic size, and it stays inside that button's fixed inline size;
 - the no-selection path toggles `emptyWorkspace.hidden` and replaces state columns;
 - provenance/focus/metadata change data/ARIA/shared classes, not dimensions;
 - metadata opening inserts one fixed region and closing removes it; and

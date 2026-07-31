@@ -6,7 +6,7 @@
   metadata disclosure behavior.
 - **Do not open when:** Working only on selection reduction, CSS tokens and layout,
   capture, export encoding, or canonical provenance storage.
-- **Related specification IDs:** SYS-020, SYS-021, SYS-022, SYS-023, SYS-024
+- **Related specification IDs:** SYS-020, SYS-021, SYS-022, SYS-023, SYS-024, SYS-025
 - **Review when:** A viewer control, keyboard mapping, focus transition, accessible
   description, or input modality changes.
 
@@ -16,7 +16,7 @@ Three models were considered:
 
 | Model | Benefit | Cost | Judgment |
 | --- | --- | --- | --- |
-| ARIA tree/grid plus managed dialog | Few tab stops and rich composite semantics | Adds roving focus, arrow navigation, expansion, and dialog focus state; tree expansion conflicts with parent-dominant hiding and no disclosure control | Reject for v1 |
+| ARIA tree/grid plus managed dialog | Few tab stops and rich composite semantics | Adds roving focus, arrow navigation, and dialog focus state; its expansion model would also have to reconcile itself with parent-dominant hiding | Reject for v1 |
 | Nested lists and native buttons | Browser supplies focus, Enter/Space, naming, and disabled behavior; hierarchy remains semantic | More tab stops | **Use, with one skip link** |
 | Focusable spans with `role=button` | Minimal-looking markup | Reimplements native activation and focus semantics in JavaScript | Reject |
 
@@ -36,6 +36,15 @@ An always-available native Clear button follows ordinary Tab order, invokes the 
 zero-selection reducer once for pointer or keyboard activation, and retains focus after
 clearing. The canonical selected-event facts display is a labelled region, including its
 explicit no-selection state.
+
+Each non-leaf row leads with one native SYS-025 collapse button carrying `aria-expanded`
+and `aria-controls` for its child list, an accessible name naming its action, its event,
+and, while disabled, why it is unavailable, and a marker glyph held outside that name
+subtree. The native `disabled` attribute does the work here that a custom widget would
+have to reimplement: it removes the control from sequential focus order, blocks pointer
+and keyboard activation, and exposes the unavailable state to assistive technology
+without a parallel ARIA vocabulary. That is the whole reason the eligibility rule is
+expressed as a disabled control rather than as an ignored click.
 
 Native Enter and Space dispatch the same reducer entry as plain click; Shift plus either
 dispatches the same range entry. Focus alone is not selection. After activation, keep

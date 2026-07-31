@@ -68,7 +68,8 @@ the keyboard or accessibility oracle.
   accessibly named control in every state, and the selected-event facts region is
   labelled and exposes no selected event initially. Event hierarchy is exposed
   through nested lists and native buttons in displayed depth-first order, with no
-  `tree`, `treegrid`, roving focus, or independent descendant-disclosure control. Focus
+  `tree`, `treegrid`, or roving focus, and with SYSV-026's collapse button as the only
+  descendant disclosure. Focus
   traversal alone changes no selection, anchor, row, or column.
   Enter/Space and their Shift/Ctrl/Meta combinations each produce exactly one transition
   equal to the corresponding SYSV-020 pointer oracle. Row descriptions give the exact
@@ -79,9 +80,9 @@ the keyboard or accessibility oracle.
   later-restored descendants have no stale accessibility node, tab stop, selection, or
   focus: while hidden they expose no node or stop, and when restored exactly one button
   and corresponding node reappear unselected in original order without receiving focus.
-  Every Clear activates exactly once, empties selection and anchor, restores all rows,
-  removes derived state, retains focus on Clear, announces the exact zero-selection
-  schema, and leaves the facts region in its explicit no-selection state.
+  Every Clear activates exactly once, empties selection and anchor, restores every row
+  collapse does not hide, removes derived state, retains focus on Clear, announces the
+  exact zero-selection schema, and leaves the facts region in its no-selection state.
   Every occurrence is one native button in column-major order with exact role, owner,
   and column description; its name equals its exact captured interval, a shared
   occurrence names both state roles, and its adjacent suffix adds neither a stop nor

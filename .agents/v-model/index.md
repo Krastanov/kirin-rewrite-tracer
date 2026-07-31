@@ -4,7 +4,7 @@
 - **Product boundary:** One standalone, developer-only Python library for observing Kirin
   rewrite effects during local debugging and tests.
 - **Acceptance authority:** Project developer.
-- **Last reviewed:** 2026-07-31
+- **Last reviewed:** 2026-07-31 (SYS-025 collapse control added the same day)
 
 ## Left-side specification
 
@@ -26,6 +26,7 @@
   snapshots, exact selected-mutation provenance, deletion effects, and frame-free
   invocation stacks.
 - One-file inert HTML export, native event/occurrence controls, Clear selection,
+  subtree collapse controls enabled only when nothing in the subtree is selected,
   canonical facts, exact neighboring provenance, metadata disclosure, focus handling,
   and the fixed dark cascade are implemented.
 - The sole viewer target is headed Chrome for Testing `151.0.7922.47`, revision
@@ -35,7 +36,7 @@
 
 ## Current verification state
 
-Across 47 actions, 7 are `passing`, 33 are `implemented`, and 7 are `failing`.
+Across 48 actions, 7 are `passing`, 34 are `implemented`, and 7 are `failing`.
 ACC-001–ACC-005 are implemented with approved automated fixtures but remain pending
 project-developer demonstration or review.
 

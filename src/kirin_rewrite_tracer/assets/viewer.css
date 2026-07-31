@@ -161,8 +161,22 @@ button {
   margin-block: 0.35rem;
 }
 
+.event-row {
+  display: flex;
+  flex-flow: row nowrap;
+  align-items: stretch;
+  gap: 0.35rem;
+}
+
 .event-button {
   inline-size: 100%;
+  white-space: nowrap;
+}
+
+.event-collapse {
+  flex: 0 0 auto;
+  inline-size: 2rem;
+  text-align: center;
   white-space: nowrap;
 }
 
@@ -309,6 +323,11 @@ button {
 .event-button[aria-current="true"] {
   background: var(--selected);
   box-shadow: inset 3px 0 0 var(--selected-marker);
+}
+
+.event-collapse[disabled] {
+  color: var(--muted);
+  border-style: dashed;
 }
 
 .ssa-occurrence[data-provenance-related="true"]::after {

@@ -109,12 +109,16 @@
 
 - **Normative statement:** From canonical events and `(frontier, anchor)`, produce the
   next ancestor-free ordered state without mutation, using pre-action rows for Shift and
-  later parent dominance. Clear returns empty/null. Columns preserve logical roles,
+  later parent dominance. Clear returns empty/null. A separate frozen preorder collapse
+  set accepts only non-leaf events, toggles one displayed eligible event per input,
+  returns its input unchanged otherwise, and never alters `(frontier, anchor)`; row
+  visibility is the union of both hiding rules. Columns preserve logical roles,
   share exactly equal `A.after`/`B.before`, treat absent after as a barrier, and never
   share own-event states or compose handoffs.
 - **Parents:** SUB-007
-- **Acceptance criterion:** Table-driven click/modifier/range/swallow/restore/Clear and
-  complete/incomplete/equality/near-miss cases match immutable expected states.
+- **Acceptance criterion:** Table-driven click/modifier/range/swallow/restore/Clear,
+  collapse toggle/eligibility/nesting, and complete/incomplete/equality/near-miss cases
+  match immutable expected states.
 - **Verification:** UNITV-009 (test)
 
 ## CMP-010 — Reduce overlays, candidates, and focus
