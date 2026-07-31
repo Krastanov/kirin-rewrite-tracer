@@ -33,6 +33,34 @@ jobs:
       - name: Test
         run: uv run --frozen pytest
 
+  installed:
+    name: Installed wheel on Python ${{ matrix.python-version }}
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        python-version: ["3.10", "3.11", "3.12", "3.13"]
+    steps:
+      - uses: actions/checkout@v7
+      - name: Install uv
+        uses: astral-sh/setup-uv@v7
+        with:
+          version: "0.12.0"
+          enable-cache: true
+          cache-dependency-glob: uv.lock
+      - name: Install Python
+        run: uv python install ${{ matrix.python-version }}
+      - name: Build the wheel
+        run: uv build --wheel
+      - name: Create the isolated wheel environment
+        run: uv venv --python ${{ matrix.python-version }} .installed-venv
+      - name: Install the wheel and acceptance dependencies
+        run: |
+          uv pip install --python .installed-venv/bin/python dist/*.whl
+          uv pip install --python .installed-venv/bin/python "pytest>=8.4,<9" "kirin-toolchain[vmath] @ git+https://github.com/QuEraComputing/kirin.git@7cdc2e02ab7ef0b3f80aaa88f930ff34015d240a"
+      - name: Test the installed wheel
+        run: .installed-venv/bin/python -m pytest -q test
+
   quality:
     name: Quality and distributions
     runs-on: ubuntu-latest
