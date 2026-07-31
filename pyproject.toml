@@ -44,6 +44,7 @@ include = [
 packages = ["src/kirin_rewrite_tracer"]
 include = [
   "src/kirin_rewrite_tracer/**/*.py",
+  "src/kirin_rewrite_tracer/py.typed",
   "src/kirin_rewrite_tracer/assets/**/*.css",
   "src/kirin_rewrite_tracer/assets/**/*.js",
 ]
@@ -52,10 +53,15 @@ include = [
 python_version = "3.10"
 strict = true
 files = ["src", "test"]
+mypy_path = ["src"]
 exclude = [
   "^build/",
   "^dist/",
 ]
+
+[[tool.mypy.overrides]]
+module = ["pytest", "_pytest.*", "numpy", "numpy.*"]
+follow_imports = "skip"
 
 [tool.pytest.ini_options]
 addopts = ["-ra", "--strict-config", "--strict-markers"]
