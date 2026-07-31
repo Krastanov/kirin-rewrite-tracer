@@ -1,5 +1,6 @@
 """Standalone tracing support for Kirin rewrites."""
 
+from ._export import export_html
 from ._model import Trace
 from ._session import (
     TraceRecorder,
@@ -13,5 +14,6 @@ __all__ = (
     "TraceRecorder",
     "TraceStateError",
     "UnsupportedTraceError",
+    "export_html",
     "trace_rewrites",
 )
