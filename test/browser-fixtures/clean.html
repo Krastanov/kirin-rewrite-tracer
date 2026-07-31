@@ -1,0 +1,29 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta
+      http-equiv="Content-Security-Policy"
+      content="default-src 'none'; base-uri 'none'; connect-src 'none'; font-src 'none'; form-action 'none'; frame-src 'none'; img-src 'none'; media-src 'none'; object-src 'none'; script-src 'nonce-krt-browser-harness'; style-src 'nonce-krt-browser-harness'; worker-src 'none'"
+    >
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Kirin rewrite tracer browser harness</title>
+    <style nonce="krt-browser-harness">
+      body { margin: 0; font-family: sans-serif; }
+      main { min-width: 80rem; white-space: nowrap; }
+    </style>
+  </head>
+  <body>
+    <a href="#workspace">Skip to workspace</a>
+    <main id="workspace" aria-label="Harness workspace">
+      <h1>Browser harness</h1>
+      <button type="button" aria-describedby="description">Inspectable action</button>
+      <p id="description">Native control used for accessibility-tree inspection.</p>
+      <p role="status" aria-label="Harness ready." aria-live="polite">Harness ready.</p>
+    </main>
+    <script nonce="krt-browser-harness">
+      document.documentElement.setAttribute("data-krt-ready", "true");
+      console.info("krt-browser-harness-ready");
+    </script>
+  </body>
+</html>

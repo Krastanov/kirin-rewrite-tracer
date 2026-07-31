@@ -1,0 +1,23 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta
+      http-equiv="Content-Security-Policy"
+      content="default-src 'none'; base-uri 'none'; connect-src https:; script-src 'nonce-krt-browser-harness'"
+    >
+    <title>Browser monitor exercise</title>
+  </head>
+  <body>
+    <main>Monitoring exercise</main>
+    <script nonce="krt-browser-harness">
+      console.warn("krt-browser-harness-console-probe");
+      fetch("https://example.invalid/krt-browser-harness")
+        .catch(() => undefined)
+        .finally(() => {
+          document.documentElement.setAttribute("data-krt-ready", "true");
+        });
+    </script>
+    <script>window.__krt_blocked_inline__ = true;</script>
+  </body>
+</html>
