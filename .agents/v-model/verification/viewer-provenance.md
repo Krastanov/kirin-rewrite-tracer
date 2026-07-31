@@ -1,7 +1,7 @@
 # Neighboring-Column Provenance Viewer Verification
 
-Use fixtures with independent provenance and geometry oracles. This action remains
-planned until its viewer and durable test exist.
+Use fixtures with independent provenance and geometry oracles. Representative edge
+policy is durable; the literal all-occurrence procedure remains incomplete.
 
 ## SYSV-021 — Verify exact neighboring-column provenance highlighting
 
@@ -60,6 +60,8 @@ planned until its viewer and durable test exist.
   right. Neither relation leaks, changes owner, skips a neighbor, or composes through
   either shared column, and every pointer-owned highlight clears when hover ends in the
   no-keyboard-candidate fixture.
-- **Status:** planned
-- **Evidence:** None
-- **Nonconformance:** None
+- **Status:** implemented
+- **Evidence:** [Pinned browser action audit](../evidence/browser-verification.md#action-audit)
+- **Nonconformance:** Representative split, merge, handoff, and repeated occurrences
+  establish the edge policy, but every tagged occurrence is not hovered in both
+  directions as the literal procedure requires.

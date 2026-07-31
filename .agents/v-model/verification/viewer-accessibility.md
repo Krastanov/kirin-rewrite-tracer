@@ -107,6 +107,8 @@ the keyboard or accessibility oracle.
   candidate's control, occurrence, or ordered role tuple discards it; neither reversing
   a column removal, reversing either role-tuple transition, nor recreating an equal-key
   control revives it.
-- **Status:** planned
-- **Evidence:** None
-- **Nonconformance:** None
+- **Status:** implemented
+- **Evidence:** [Pinned browser action audit](../evidence/browser-verification.md#action-audit)
+- **Nonconformance:** The durable suite exercises targeted Tab/Shift+Tab transitions but
+  does not record a complete forward and reverse traversal of every visible event
+  control with every per-move state and accessibility observation.

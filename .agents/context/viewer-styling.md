@@ -99,10 +99,12 @@ their authoritative textual labels. Thus hue is never the only added signal.
 Keep code in the captured monospace presentation with `white-space: pre`. Put the
 leading event hierarchy and all consecutive SSA columns in one horizontal scroller
 rather than inventing a responsive stack that destroys adjacency. At 200% Chrome page
-zoom, scrolling—not reflow or truncation—preserves every column and control. The
-supported floor is a measured `640 × 480` CSS viewport; verify both it and `1280 × 800`
-at 100% and 200% page zoom, and analyze the monotonic no-wrap invariant over varied
-larger viewports. A viewport below either floor dimension has no v1 presentation claim.
+zoom, finite fixtures preserve columns through scrolling rather than reflow. Tests cover
+`640 × 480`, `1280 × 800`, and varied larger viewports at both zooms; below either floor
+dimension has no claim. This is not universal: valid unbounded text reaches Blink's
+layout cap and leaves a later control unreachable, so SYSV-025 and the universal
+SYS-024/SUB-008 clause fail. See the
+[layout evidence](../v-model/evidence/sysv-025-layout-invariant.md).
 
 Keep overlay collision handling equally small: size the one active region to at most
 `min(36rem, calc(100vw - 1rem))` by

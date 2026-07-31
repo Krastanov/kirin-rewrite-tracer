@@ -1,6 +1,8 @@
 # Provenance Verification and Acceptance Actions
 
 Pass only with durable evidence covering every criterion; omit transient logs.
+Unless stated otherwise, use an isolated single-threaded CPython 3.13.11 process with
+the SYS-002 pins. This initial environment is not a product runtime pin.
 
 ## ACC-003 — Demonstrate exact rewrite provenance
 
@@ -20,28 +22,21 @@ Pass only with durable evidence covering every criterion; omit transient logs.
   direction, identify the supported operation that completed a statement deletion, and
   see unselected or unrelated endpoints remain unmatched without a confidence score,
   duplicated inverse fact, or inferred line pairing.
-- **Status:** planned
-- **Evidence:** None
-- **Nonconformance:** None
+- **Status:** implemented
+- **Evidence:** [Acceptance handoff](../evidence/acceptance-handoff.md#approved-fixtures-and-runners)
+- **Nonconformance:** Developer review remains pending.
 
 ## SYSV-012 — Verify exact identity and selected-mutation provenance
 
 - **Covers:** SYS-012
 - **Method:** test
-- **Procedure:** Maintain an identity and selected-API call oracle independent of the
-  tracer. Exercise a moved surviving statement and SSA value; direct
-  `Statement.replace_by`; `SSAValue.replace_by` where the source remains live, where it
-  has zero uses, and where multiple sources target one value; `Statement.from_stmt`; and
-  recursive
-  `Region.clone` with blocks, block arguments, statements, results, and intermediate
-  entities absent from both event snapshots. Exercise direct `Statement.delete`,
-  replacement cleanup through `DeletedSSAValue`, a selected call that completes a nested
-  selected operation before its exception is caught by the rewrite, direct attribute
-  mutation, and unrelated entities with identical printed text and metadata. Separately
-  invoke a selected method bound before trace activation.
-- **Environment / configuration:** Isolated single-threaded CPython 3.13.11 test
-  processes using the SYS-002 revisions and configuration. This is initial
-  single-environment evidence, not a product runtime pin.
+- **Procedure:** Against an independent identity/API log, exercise moved identity,
+  direct statement/SSA replacement (live, zero-use, and many-to-one), statement copy,
+  recursive region clone with transient nested entities, direct deletion,
+  `DeletedSSAValue` cleanup, a completed nested selected call beneath a caught failure,
+  direct attribute mutation, identical unrelated entities, and a selected method bound
+  before activation.
+- **Environment / configuration:** Default environment above.
 - **Pass criterion:** Entity identifiers follow object identity, never retain raw
   `id()` values as canonical IDs, and do not confuse object-ID reuse. Every selected
   operation appears once in exact entry order, belongs to the innermost event and correct
@@ -53,9 +48,9 @@ Pass only with durable evidence covering every criterion; omit transient logs.
   operation has no retargeting relation; and neither cleanup targets, incomplete calls,
   direct mutation, nor similarity creates lineage. The pre-bound bypass explicitly
   fails and leaves no trace presented as complete.
-- **Status:** planned
-- **Evidence:** None
-- **Nonconformance:** None
+- **Status:** implemented
+- **Evidence:** [Source/wheel audit](../evidence/source-and-wheel-verification.md#action-audit)
+- **Nonconformance:** The full identity/reuse combination is incomplete.
 
 ## SYSV-013 — Verify exact rendered provenance projection
 
@@ -81,9 +76,9 @@ Pass only with durable evidence covering every criterion; omit transient logs.
   after-occurrence set rather than a later trace state; and no individual line pair or
   relationship is added from textual, stylistic, positional, type, name, metadata, or
   structural similarity.
-- **Status:** planned
-- **Evidence:** None
-- **Nonconformance:** None
+- **Status:** implemented
+- **Evidence:** [Source/wheel audit](../evidence/source-and-wheel-verification.md#action-audit)
+- **Nonconformance:** One full independent occurrence oracle is absent.
 
 ## SYSV-014 — Verify invocation-stack fidelity and lifetime
 
@@ -98,18 +93,16 @@ Pass only with durable evidence covering every criterion; omit transient logs.
   failing sentinel and place a frame-local object with a raising `repr()`. After
   releasing the trace, force collection and observe a weak reference to a separate
   frame-local lifetime sentinel.
-- **Environment / configuration:** Isolated single-threaded CPython 3.13.11 test process
-  using the SYS-002 revisions and configuration. This is initial single-environment
-  evidence, not a product runtime pin.
+- **Environment / configuration:** Default environment above.
 - **Pass criterion:** Every event and mutation references the exact full ordered frame
   sequence and only the three declared fields; nested operations retain useful Kirin
   caller frames; incomplete records retain invocation paths but no exception traceback
   claim; tracer frames are absent; source lookup and hostile local `repr()` are never
   invoked; and the lifetime sentinel is collectible, demonstrating that canonical
   storage retains no live frame or traceback graph.
-- **Status:** planned
-- **Evidence:** None
-- **Nonconformance:** None
+- **Status:** implemented
+- **Evidence:** [Source/wheel audit](../evidence/source-and-wheel-verification.md#action-audit)
+- **Nonconformance:** The full fixture is not repeated on every minor.
 
 ## SYSV-016 — Verify single-copy bidirectional provenance navigation
 
@@ -120,18 +113,16 @@ Pass only with durable evidence covering every criterion; omit transient logs.
   completed statement deletion. Query each applicable identity, relation, or effect from
   every endpoint. Discard and rebuild all in-memory lookup indexes from the retained
   canonical facts, then repeat the queries.
-- **Environment / configuration:** Isolated single-threaded CPython 3.13.11 test process
-  using the SYS-002 revisions and configuration. This is initial single-environment
-  evidence, not a product runtime pin.
+- **Environment / configuration:** Default environment above.
 - **Pass criterion:** The same live object has one trace entity identifier across
   snapshots. Source and destination queries return the same canonical relation
   identifiers; entity and operation queries return the same deletion-effect identifiers;
   no inverse relation is retained as an independent canonical fact; and rebuilding
   derived
   indexes preserves every result.
-- **Status:** planned
-- **Evidence:** None
-- **Nonconformance:** None
+- **Status:** implemented
+- **Evidence:** [Source/wheel audit](../evidence/source-and-wheel-verification.md#action-audit)
+- **Nonconformance:** The complete query/rebuild cross-product is absent.
 
 ## SYSV-017 — Verify supported statement-deletion effects
 
@@ -144,9 +135,7 @@ Pass only with durable evidence covering every criterion; omit transient logs.
   empty and statement-containing blocks and regions through their own delete and detach
   APIs. Compare effects, operation nesting, event ownership, entity identities, and
   invocation stacks with the oracle.
-- **Environment / configuration:** Isolated single-threaded CPython 3.13.11 test process
-  using the SYS-002 revisions and configuration. This is initial single-environment
-  evidence, not a product runtime pin.
+- **Environment / configuration:** Default environment above.
 - **Pass criterion:** Each normally completed `Statement.delete` call produces exactly
   one `statement_delete_completed` effect linked to its statement and operation. Nested
   replacement cleanup remains beneath its replacement operation and every effect leads
@@ -157,6 +146,6 @@ Pass only with durable evidence covering every criterion; omit transient logs.
   deletion produces effects only for the selected `Statement.delete` calls it actually
   invokes, never for the container entity itself; and snapshot disappearance alone
   never creates an effect.
-- **Status:** planned
-- **Evidence:** None
-- **Nonconformance:** None
+- **Status:** implemented
+- **Evidence:** [Source/wheel audit](../evidence/source-and-wheel-verification.md#action-audit)
+- **Nonconformance:** The complete deletion/detach matrix is absent.

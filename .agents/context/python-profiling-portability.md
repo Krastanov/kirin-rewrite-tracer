@@ -5,7 +5,7 @@
   classification, or Python-version compatibility.
 - **Do not open when:** Working only on event semantics, snapshots, rendering, export,
   or provenance after an event has been detected.
-- **Related specification IDs:** SYS-002, SYS-010, SYS-011, SYS-014, SYS-015
+- **Related specification IDs:** SYS-002, SYS-004, SYS-010, SYS-011, SYS-014, SYS-015
 - **Review when:** Kirin's declared Python floor, the initial test runtime, or a detector
   API changes.
 
@@ -30,8 +30,9 @@ Keep the version-sensitive detector code to:
 - `inspect.isfunction()`, `inspect.isgeneratorfunction()`,
   `inspect.iscoroutinefunction()`, and `inspect.isasyncgenfunction()` on plain
   functions;
+- documented raw `classmethod` and `staticmethod` descriptor `__wrapped__` access;
 - function `__code__`, read-only frame `f_code`, and immediate mapping reads from
-  `f_locals`; and
+  `f_locals`, including saved-mutation code/receiver authorization; and
 - ordinary runtime type, string, and identity checks plus a LIFO event stack.
 
 Treat `frame.f_locals` as a transient mapping. Python 3.13 may expose optimized locals
@@ -44,6 +45,16 @@ Do not use `sys.monitoring`, `threading.setprofile_all_threads`, `frame.f_genera
 private frame APIs, native frame access, signature or annotation inference, source
 locations, recursive profiling, or `sys.version_info` branches in the detector. Reject
 a callable form that the permitted surface cannot classify.
+
+## Known detector gap
+
+An unbound direct subclass `rewrite` override invoked with invalid `self` has a code
+object outside the pinned base-code set. Current classification returns “unrelated”
+before it can recover an owner, so the call returns and the recorder freezes a complete
+empty trace. SYSV-004, INTV-002, and UNITV-004 fail. Do not “fix” this with
+`co_name == "rewrite"` or global subclass enumeration: those weaken exact ownership and
+introduce false positives or global mutable discovery. See the
+[inspection and executable counterexample](../v-model/evidence/detector-portability-inspection.md).
 
 The documented profile surface does not provide an exception event. A Python `return`
 profile callback with argument `None` can represent either explicit `None` or exception

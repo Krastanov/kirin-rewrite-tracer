@@ -16,9 +16,9 @@
   matching the known states, can inspect every expected metadata value on its correct
   side and owner, observes every expected style association on the correct text, and can
   identify the metadata-only difference.
-- **Status:** planned
-- **Evidence:** None
-- **Nonconformance:** None
+- **Status:** implemented
+- **Evidence:** [Acceptance handoff](../evidence/acceptance-handoff.md#approved-fixtures-and-runners)
+- **Nonconformance:** Developer review remains pending.
 
 ## SYSV-001 — Verify paired state capture
 
@@ -35,31 +35,22 @@
   attributable ordered pair whose first state equals the fixture input and whose second
   state equals the rewrite result; no-op pairs contain two equal copies of the
   independently known unchanged state.
-- **Status:** planned
-- **Evidence:** None
-- **Nonconformance:** None
+- **Status:** implemented
+- **Evidence:** [Source/wheel audit](../evidence/source-and-wheel-verification.md#action-audit)
+- **Nonconformance:** Nested pairs lack independent full-payload oracles.
 
 ## SYSV-002 — Verify the v1 support envelope
 
 - **Covers:** SYS-002
 - **Method:** test
-- **Procedure:** On CPython 3.10 through 3.13, exercise tracing on the proved pinned Kirin
-  revision and Rich 15.0.0 with the dark theme, indentation marks, no selected inline
-  hint or printer analysis, Rich default
-  highlighter, snapshot and printer hooks and every invoked metadata-representation hook
-  that invoke no public rewrite, specialized handler, or SYS-012 selected mutation API,
-  optional caller-analysis
-  metadata whose invoked `Printable.print_str()` and `repr()` hooks terminate and remain
-  observationally pure, `sys.getprofile()` equal to `None`, one non-nested context, and
-  an isolated process satisfying the lifetime assumptions and whose traced code neither
-  replaces nor behaviorally inspects selected mutation descriptors or tracer-added call
-  frames and with all five expected raw descriptors. Observe the profile slot
-  before, during, and after one normally exiting context and one context exited by a
-  deterministic body exception. Then install a sentinel profile function and attempt
-  entry. Prove Kirin through PEP 610 VCS metadata and through a clean exact local Git
-  checkout. Independently vary CPython outside the range, Kirin revision and checkout
-  dirtiness, provenance absence, Rich revision, each raw descriptor, theme, indentation,
-  inline hint, printer analysis, highlighter, and nesting.
+- **Procedure:** Across CPython 3.10–3.13, run the proved Kirin/Rich pins, declared
+  printer defaults, pure capture/representation hooks, terminating pure caller
+  representations, empty profile slot, one nonnested single-threaded process, lifetime
+  assumptions, and five raw descriptors. Observe profile ownership for normal and body
+  exception exits, then attempt entry with a sentinel profile. Prove Kirin separately
+  through PEP 610 and clean exact Git. Vary out-of-range runtime, revision, dirtiness,
+  missing provenance, Rich, every descriptor, theme, indentation, inline hint, printer
+  analysis, highlighter, and nesting.
 - **Environment / configuration:** Isolated single-threaded CPython 3.10, 3.11, 3.12,
   and 3.13 source and installed-distribution processes with controlled PEP 610 and local
   Git provenance, Rich 15.0.0, and supported and unsupported configurations.
@@ -70,9 +61,9 @@
   support envelope before activation; fingerprints alone never prove the Kirin commit.
   No diagnostic behavior is asserted for a violated input assumption, and cleanup does
   not clobber a foreign profile or descriptor replacement.
-- **Status:** planned
-- **Evidence:** None
-- **Nonconformance:** None
+- **Status:** implemented
+- **Evidence:** [Source/wheel audit](../evidence/source-and-wheel-verification.md#action-audit)
+- **Nonconformance:** The complete configuration variation is not durable.
 
 ## SYSV-003 — Verify observational transparency
 
@@ -88,33 +79,22 @@
   its untraced counterpart; every raising fixture propagates the same preconstructed
   exception object; and every final statement order, parent, SSA-use target, metadata
   record, and normalized styled snapshot matches its explicit oracle.
-- **Status:** planned
-- **Evidence:** None
-- **Nonconformance:** None
+- **Status:** implemented
+- **Evidence:** [Source/wheel audit](../evidence/source-and-wheel-verification.md#action-audit)
+- **Nonconformance:** No one fixture compares every transparency clause.
 
 ## SYSV-004 — Verify unsupported-use rejection
 
 - **Covers:** SYS-004, SYS-006, SYS-007, SYS-010
 - **Method:** test
-- **Procedure:** Exercise every declared unsupported rule, tracing configuration,
-  required snapshot-value representation category, and presentation path other than a
-  SYS-002 input-assumption violation, including a deterministic metadata value whose type
-  label cannot be formed, another whose pinned Kirin printable path and `repr()` both
-  fail, every out-of-domain SYS-006 style-meta form, every presentation path the product
-  declares unsupported, and trace entry while a sentinel profile function is installed.
-  Invoke an unsupported child beneath a
-  supported wrapper. Exercise both a synthetic no-op rule that directly calls another
-  rule instance's specialized handler and the pinned
-  `ScfToCfRule` paths that directly delegate to `ForRule.rewrite_Statement` and
-  `IfElseRule.rewrite_Statement`; use printable unattached nodes, including a `For` body
-  with its required block argument and an `IfElse` with two empty blocks, so fixture
-  failure is attributable to the bypass. Place hostile representation values in an
-  unselected hint or metadata-only caller-analysis entry so canonical root rendering
-  does not invoke them first. Observe each failure signal and verify trace and export
-  denial. Catch unsupported use inside one body and exit normally; repeat with a later
-  distinct body exception. Exercise observable malformed public frames and resumed
-  generator, awaited coroutine, and iterated async-generator rewrite bodies; merely
-  construct equivalent deferred callables in separate assumption cases.
+- **Procedure:** Exercise all declared unsupported rules, configurations,
+  representation/style-meta values, and output paths, including unformable type labels,
+  both text paths failing, an occupied profile, and an unsupported child. Run synthetic
+  and pinned `ScfToCfRule` cross-instance specialized bypasses on valid printable
+  `For`/`IfElse` nodes; keep hostile representation values outside root rendering.
+  Verify trace/export denial, caught-normal and later-exception identity, malformed
+  public frames, and resumed generator/coroutine/async-generator bodies. Construct but
+  do not execute equivalent deferred callables.
 - **Environment / configuration:** Local Python test process using controlled unsupported
   rules, configurations, metadata values, and presentation paths around the pinned Kirin
   checkout; supported portions of each fixture remain within the SYS-002 input
@@ -124,9 +104,9 @@
   is exposed. Caught unsupported use reappears on normal exit as the same error object;
   the later body exception instead propagates by identity. Observable nonordinary frames
   invalidate, while never-executed deferred callables establish no rejection claim.
-- **Status:** planned
-- **Evidence:** None
-- **Nonconformance:** None
+- **Status:** failing
+- **Evidence:** [Detector counterexample](../evidence/detector-portability-inspection.md#executable-invalid-self-counterexample)
+- **Nonconformance:** An invalid-`self` direct override freezes a complete empty trace.
 
 ## SYSV-010 — Verify ordinary public-entry compatibility
 
@@ -152,6 +132,6 @@
   superclass-delegation case; no specialized-handler frame creates an event; every call
   returns normally with the expected `RewriteResult` runtime type and fields; and no
   other event appears.
-- **Status:** planned
-- **Evidence:** None
+- **Status:** passing
+- **Evidence:** [Source/wheel audit](../evidence/source-and-wheel-verification.md#action-audit)
 - **Nonconformance:** None

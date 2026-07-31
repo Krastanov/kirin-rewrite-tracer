@@ -1,80 +1,99 @@
 # Kirin Rewrite Tracer
 
-This repository contains a standalone, developer-only Python package for inspecting the
-effects of Kirin rewrites during local debugging and tests. The package and verification
-environment are scaffolded; capture and export APIs are introduced only with their
-corresponding implementation contracts.
+`kirin-rewrite-tracer` records Kirin rewrite calls as a deeply immutable trace and
+exports that trace as one autonomous, inert HTML viewer.
 
-The canonical draft specification and verification map is the
-[repository V-model](.agents/v-model/index.md). Exact styled-presentation fidelity,
-complete statement and SSA metadata capture within the declared inventory, and opt-in
-caller analysis are confirmed requirements. V1 rendering is pinned to Rich 15.0.0 and
-Kirin's dark defaults; supported wrappers and leaves use one ordered parent-linked event
-model, including no-op calls. A public rewrite frame that does not return a
-`RewriteResult` is retained neutrally as incomplete with its before state and completed
-mutation activity, but no after state. Tracing requires a process that remains
-single-threaded throughout the context. As another undetected v1 input assumption,
-snapshot and printer hooks and every invoked metadata-representation hook must not
-invoke public rewrites or specialized handlers.
-Activation also requires `sys.getprofile()` to be `None` and fails without replacing an
-installed profile function; once active, the tracer assumes nothing replaces its hook.
-Ordinary synchronous Python public `rewrite(self, node)` entries are the confirmed v1
-category, including Kirin's six pinned direct overrides; an executed ordinary Python
-cross-instance specialized-handler bypass is rejected. The detector is not pinned to
-CPython 3.13: initial tests may use CPython 3.13.11, while implementation is constrained
-to the generic profiling and object-introspection surface documented in both Python
-3.10 and 3.13.
+## Use
 
-Provenance is partial but exact: trace-scoped identity covers surviving objects; four
-pinned mutation seams cover statement replacement, SSA-use retargeting, statement
-copying, and region cloning; and `Statement.delete` contributes a completed-deletion
-effect. Each relation or effect is stored once and indexed from every applicable
-endpoint, rather than duplicated in forward and backward forms. No textual or structural
-heuristic fills gaps. Supported rewrite events and mutation operations retain structured
-filename, line-number, and function-name invocation stacks without live frames or
-locals.
+Install the locked development environment with `uv sync --python 3.13`, then:
 
-Any retained trace, including one marked incomplete, can be exported as one
-self-contained interactive HTML file. It embeds trace data and presentation resources,
-opens directly with only a local browser, makes no page-originated external request, and
-preserves free-form trace content as inert data. Incomplete events retain their before
-states and completed activity without fabricated after states. V1's sole supported
-  viewer environment is headed Chrome for Testing `151.0.7922.47`, revision `r1654411`,
-  `linux64` on x86-64 Linux. Other browser/platform support, Python implementations or
-  versions outside CPython `>=3.10,<3.14`, other callable forms, broader mutation
-  coverage, and canonical trace
-  persistence remain future work.
+```python
+from pathlib import Path
 
-The viewer keeps the event hierarchy in a leading tree column. Selecting a parent hides
-every strict descendant row and contributes that parent's coarse pair instead of
-descendant pairs; excluding it through a later selection restores the original rows and
-order, unselected and without stale detail state. There is no independent
-descendant-disclosure state.
-Plain click replaces the selection with one row and never toggles it off. Shift-click
-replaces the selection with the inclusive anchor-to-target interval in pre-action
-visible order, then applies parent dominance; a swallowed anchor rebases to the
-unique surviving selected ancestor. Ctrl/Meta does not alter click mode—Shift still
-selects the range—and drag alone does not select.
-Selected events otherwise contribute logical event-local pairs in one consecutive
-coarse range. Exactly equal
-`A.after` and `B.before` handoffs render once in an always-visible dual-labelled shared
-column while both logical snapshots remain retained.
-Unequal handoffs stay separate and support identity-only hover across their boundary.
-Within an event pair, hover may also project one-hop relations owned anywhere in its
-dominated subtree without changing ownership or composing relation paths. Each SSA
-definition has an italic cyan ` ⟦type⟧` suffix containing only its exact
-  snapshot-specific retained type text; references have no suffix. Clicking any
-  definition or reference opens its complete retained owner metadata anchored to it,
-  above when space permits. At most one disclosure is open; occurrence clicks replace
-  or toggle it, outside clicks and `Escape` dismiss it, and column removal or a
-  single/shared role change clears it without migration or stale restoration.
+from kirin_rewrite_tracer import export_html, trace_rewrites
 
-The hierarchy uses nested lists and native buttons rather than a custom tree widget.
-Enter/Space mirrors click, Shift mirrors range selection, swallowed targets move focus
-to their selected ancestor, and keyboard-focused SSA values get the same exact
-provenance preview as hover. One fixed dark token palette supplies high-contrast
-selection, focus, metadata, and provenance cues through a shared CSS cascade without
-  overwriting captured Rich styles. Columns stay consecutive and horizontally
-  scrollable at 100% and 200% Chrome page zoom down to a `640 × 480` CSS viewport.
-  Themes, custom search/filter, graph views, mobile layout, printing, and UI state
-  persistence are intentionally outside v1.
+with trace_rewrites() as recorder:
+    result = rule.rewrite(node)
+
+trace = recorder.trace
+published = export_html(trace, Path("rewrite-trace.html"))
+```
+
+The export parent must already exist and the destination must not. An existing or raced
+target raises `FileExistsError` without overwrite. Successful export returns the
+published `Path`. Pass `analysis=<ssa-value mapping>` only when caller analysis metadata
+should be captured.
+
+A supported body exception freezes the valid trace before propagating the same exception
+object. Keep the recorder bound outside the `with` statement to retrieve it:
+
+```python
+recorder = trace_rewrites()
+try:
+    with recorder:
+        rule.rewrite(node)
+except BaseException:
+    if recorder.state == "FROZEN":
+        trace = recorder.trace
+    raise
+```
+
+Unsupported use raises `UnsupportedTraceError`, permanently invalidates the recorder,
+and exposes no partial trace. `TraceRecorder` is one-shot; active trace access raises
+`TraceStateError`.
+
+The public root exports are `trace_rewrites`, `export_html`, `Trace`,
+`TraceRecorder`, `TraceStateError`, and `UnsupportedTraceError`.
+
+## Supported boundary
+
+- CPython `>=3.10,<3.14`, Rich `15.0.0`, and Kirin commit
+  `7cdc2e02ab7ef0b3f80aaa88f930ff34015d240a`.
+- One single-threaded, non-nested session with an initially empty profile slot and the
+  five pinned Kirin mutation descriptors.
+- During capture, traced code must not replace the active profile callback or descriptors
+  or behaviorally inspect tracer-added frames/wrappers.
+- Ordinary synchronous Python public rewrite entries. Executed generators, coroutines,
+  async generators, cross-instance specialized dispatch, and selected-mutator bypasses
+  are unsupported.
+- Snapshot, printer, and invoked metadata-representation hooks must terminate, remain
+  IR-pure, and not perform public rewrites, specialized dispatch, or selected mutations.
+- Unobservable C/custom descriptors and never-executed deferred callables have no
+  diagnostic claim.
+- The sole viewer target is headed Chrome for Testing `151.0.7922.47`, provision
+  revision `r1654411`, `linux64` on x86-64 Linux.
+- Viewer evidence covers 100%/200% page zoom and finite fixtures at measured CSS
+  viewports at least `640×480`. A viewport below 640 CSS pixels wide or below 480 CSS
+  pixels high, other browsers/platforms, headless, mobile, and touch carry no v1 claim.
+
+The viewer provides native event and occurrence controls, an always-available Clear
+selection button, selected-event canonical facts, exact neighboring provenance,
+definition metadata, keyboard/focus handling, and the fixed dark cascade.
+
+## Known nonconformances
+
+- An unbound direct rewrite override called with an invalid `self` can be silently
+  ignored, yielding a complete empty trace instead of `UnsupportedTraceError`.
+- If publication creates the destination and then reports an error, the temporary file
+  is removed but the destination can remain, contrary to the current failure contract.
+- Very large valid snapshot text can exceed pinned Blink's horizontal layout extent,
+  leaving a later control unreachable. Finite viewport tests do not prove universal
+  trace-size reachability.
+
+See the [V-model profile](.agents/v-model/index.md), [verification evidence](.agents/v-model/evidence/index.md),
+and [acceptance handoff](.agents/v-model/evidence/acceptance-handoff.md). Developer
+acceptance of ACC-001 through ACC-005 remains pending.
+
+## Verify
+
+```console
+uv run pytest -m 'not browser'
+uv run ruff check .
+uv run ruff format --check .
+uv run mypy src test
+uv run pre-commit run --all-files
+uv build
+```
+
+The pinned headed-browser command is documented in
+[`test/browser-fixtures/README.md`](test/browser-fixtures/README.md).

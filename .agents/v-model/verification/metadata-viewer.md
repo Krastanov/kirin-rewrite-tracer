@@ -77,6 +77,6 @@ lifecycle, and geometry oracles.
   presenting the new workspace even though content, entity, and occurrence are equal.
   This occurs without another dismissal input. Neither the immediate nor a later reverse
   transition migrates or reopens the overlay.
-- **Status:** planned
-- **Evidence:** None
+- **Status:** passing
+- **Evidence:** [Pinned browser action audit](../evidence/browser-verification.md#action-audit)
 - **Nonconformance:** None

@@ -42,6 +42,9 @@ Keep capture, export encoding, and browser presentation distinct:
 Require an existing destination parent and a nonexistent target. Write a temporary file
 in that same directory and publish atomically without overwrite; an existing or raced
 target raises `FileExistsError`, and every failure removes the temporary artifact.
+There is one known contract gap: if publication creates the destination and then raises,
+the target can remain while failure is reported. See the
+[browser/export evidence](../v-model/evidence/browser-verification.md#known-nonconformances).
 
 The simplest safe payload is compact JSON produced with `ensure_ascii=True` and
 `allow_nan=False`, with `<`, `>`, and `&` escaped as JSON Unicode escapes before
@@ -107,10 +110,12 @@ hierarchy, and stack, while its after snapshot remains absent. The viewer presen
 neutral recorded status and does not infer whether an exception or explicit return
 caused the exit.
 
-V1 promises only the pinned browser environment and the narrow SYS-023 accessibility
-contract at a measured CSS viewport of at least `640 × 480` and Chrome page zoom of 100%
-or 200%. It does not promise other engines, builds, operating systems, headless or
-mobile/touch operation, pixel equivalence with a terminal, general WCAG conformance,
-stable HTML/DOM/JSON, import or rehydration, UI-state persistence, printing, raw-data
+V1 targets the pinned browser and the narrow SYS-023 accessibility contract at 100% or
+200% zoom. Finite fixtures are exercised at and above `640 × 480`; below either floor
+dimension has no claim. Unbounded valid text can exceed Blink's layout extent, so the
+universal SYS-024/SUB-008 reachability clause currently fails; see
+[SYSV-025](../v-model/evidence/sysv-025-layout-invariant.md). V1 does not promise other
+engines, builds, operating systems, headless/mobile/touch operation, pixel equivalence,
+general WCAG conformance, stable HTML/DOM/JSON, import, UI persistence, printing,
 download, path redaction, deterministic bytes, compression, streaming, or a
-trace-size/performance limit. These require separate future increments.
+trace-size/performance limit.

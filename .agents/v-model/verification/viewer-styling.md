@@ -81,8 +81,10 @@ the oracle. Screenshots may diagnose failures but are not golden evidence.
   `test/test_viewer_styling_browser.py::test_fixed_tokens_contrast_selection_suffix_and_focus_cascade`;
   `test/test_viewer_styling_browser.py::test_focused_related_occurrence_keeps_captured_style_and_both_cues`;
   `test/test_viewer_styling_browser.py::test_fixed_surface_moat_isolates_exact_and_near_provenance_backgrounds`;
-  `test/test_viewer_styling_browser.py::test_supported_fixture_zoom_no_wrap_layout_matrix_and_floor_exclusions`
-- **Nonconformance:** None
+  `test/test_viewer_styling_browser.py::test_supported_fixture_zoom_no_wrap_layout_matrix_and_floor_exclusions`;
+  [pinned browser action audit](../evidence/browser-verification.md#action-audit)
+- **Nonconformance:** Active-overlay nonzero/visible geometry is not measured in every
+  required 100%/200% by `1280×800`/`640×480` combination.
 
 ## SYSV-025 — Analyze the universal large-viewport layout invariant
 

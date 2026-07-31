@@ -16,9 +16,9 @@ clause; do not paste transient logs.
 - **Pass criterion:** The acceptance authority identifies every supported wrapper and
   leaf occurrence, including the no-op, and determines the correct nearest wrapper and
   relative call position for every nested occurrence.
-- **Status:** planned
-- **Evidence:** None
-- **Nonconformance:** None
+- **Status:** implemented
+- **Evidence:** [Approved fixture and runner handoff](../evidence/acceptance-handoff.md#approved-fixtures-and-runners)
+- **Nonconformance:** Project-developer demonstration or review remains pending.
 
 ## SYSV-008 — Verify the uniform ordered event tree
 
@@ -44,9 +44,10 @@ clause; do not paste transient logs.
   nearest enclosing event; and ordinals are distinct within each parent group and
   strictly reproduce entry order, including for parentless roots and repeated concrete
   types.
-- **Status:** planned
-- **Evidence:** None
-- **Nonconformance:** None
+- **Status:** implemented
+- **Evidence:** [Source and wheel action audit](../evidence/source-and-wheel-verification.md#action-audit)
+- **Nonconformance:** The nested events' full before/after payloads are not each checked
+  against an independent state oracle.
 
 ## ACC-004 — Demonstrate incomplete rewrite inspection
 
@@ -65,9 +66,9 @@ clause; do not paste transient logs.
   operation owner. The parent remains complete with its own before/after pair, the
   aggregate trace is incomplete, and the traced result and final IR match the untraced
   execution.
-- **Status:** planned
-- **Evidence:** None
-- **Nonconformance:** None
+- **Status:** implemented
+- **Evidence:** [Approved fixture and runner handoff](../evidence/acceptance-handoff.md#approved-fixtures-and-runners)
+- **Nonconformance:** Project-developer demonstration or review remains pending.
 
 ## SYSV-015 — Verify incomplete event retention
 
@@ -98,6 +99,8 @@ clause; do not paste transient logs.
   by identity, the caught parent's `RewriteResult` fields equal the fixture constants,
   and final statement order, parent links, and SSA-use target identities equal the
   fixture's explicit oracle.
-- **Status:** planned
-- **Evidence:** None
-- **Nonconformance:** None
+- **Status:** implemented
+- **Evidence:** [Source and wheel action audit](../evidence/source-and-wheel-verification.md#action-audit)
+- **Nonconformance:** The complete cross-version caught, propagated, explicit-`None`,
+  nested-operation-shell, and outside-exception procedure is not one durable
+  clause-complete action.

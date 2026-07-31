@@ -23,6 +23,6 @@ clause; do not paste transient logs.
   frame-local access is independent of mapping concrete type and identity and performs
   no write; and no runtime result is represented as evidence for an unexecuted
   interpreter or Python version.
-- **Status:** planned
-- **Evidence:** None
+- **Status:** passing
+- **Evidence:** [Detector portability inspection](../evidence/detector-portability-inspection.md#inspected-surface)
 - **Nonconformance:** None

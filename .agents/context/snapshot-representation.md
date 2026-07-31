@@ -7,13 +7,12 @@
   touching captured states.
 - **Related specification IDs:** STK-001, STK-003, STK-005, SYS-001, SYS-002, SYS-003,
   SYS-005, SYS-006, SYS-007, SYS-012, SYS-013, SYS-019, SYS-020, SYS-022
-- **Review when:** The supported Kirin or Rich version changes, a new printer output path
-  is supported, the metadata inventory changes, or the snapshot component contract is
-  baselined.
+- **Review when:** The supported Kirin or Rich version, printer output path, metadata
+  inventory, or snapshot component contract changes.
 
 The [V-model](../v-model/02-system-requirements/index.md) owns fidelity. This page
-records the smallest implementation recommendation; concrete DTOs and persistence remain
-open, and SYS-019 makes HTML a one-way view rather than canonical storage.
+explains the implemented v1 shape; canonical persistence remains open, and SYS-019 makes
+HTML a one-way view rather than canonical storage.
 
 ## Options considered
 
@@ -24,28 +23,27 @@ open, and SYS-019 makes HTML a one-way view rather than canonical storage.
 | Cloned or serialized Kirin IR | Retains a semantic IR shape that can be printed again. | Heavier and coupled to dialect imports and object reconstruction; current cloning and serialization omit relevant hints or source fields and do not capture the original presentation. | Reject for v1 snapshots. |
 | Unicode text, normalized style spans, and owner-keyed metadata records | Renderer-neutral; preserves presentation, supports plain/terminal/HTML views, keeps offsets usable for later provenance, and makes otherwise-unprinted metadata inspectable. | Requires a small normalizer and explicit metadata inventory. | **Recommended canonical model.** |
 
-## Recommended minimal shape
+## Implemented minimal shape
 
-The names are illustrative until a component contract is baselined:
+The exact frozen records live in
+[`_model.py`](../../src/kirin_rewrite_tracer/_model.py) under CMP-001/CMP-002. The
+implemented ownership shape is:
 
 ```text
-Snapshot
-  schema_version
-  root_entity_id
-  text
-  styles[]                         # deduplicated serialization-safe styles
-  spans[start, end, style_id][]    # Unicode code-point offsets
-  entities[trace_id, kind, display_name][]
-  occurrences[trace_id, role, start, end][]
-  metadata[owner_trace_id, namespace, key, value_type, rendered, status][]
-  capture_config[kirin_commit, rich_version, theme]
+Trace[configurations, styles, entities, snapshots, occurrences, metadata, ...]
+Snapshot[id, event_id, state, configuration_id, root_entity_id, text,
+         style_spans, entity_ids, occurrence_ids, metadata_ids, analysis_supplied]
+TraceEntity[id, kind, qualified_type, defining_owner_id]
+EntityOccurrence[id, snapshot_id, entity_id, role, start, end]
+MetadataRecord[id, snapshot_id, owner_entity_id, namespace, key, presence, value]
 ```
 
-`status` distinguishes printable text from `repr()` fallback; dual failure is explicit
-under SYS-004. Metadata objects need not round-trip, but their presentation and ownership
-do. Process-local monotonic `trace_id` values, not persisted `id()`, correlate survivors;
-SYS-012 extends them to mutation-only entities. Overlapping `occurrences` associate
-container, definition, and reference text without asserting lineage.
+`MetadataRecord.presence` distinguishes absence; `RenderedValue.path` distinguishes
+printable text from `repr()` fallback. Dual failure is explicit under SYS-004. Metadata
+objects need not round-trip, but their presentation and ownership do. Monotonic trace
+IDs, not persisted `id()`, correlate survivors; SYS-012 extends them to mutation-only
+entities. Overlapping occurrences associate container, definition, and reference text
+without asserting lineage.
 
 Expose the root trace ID. SYS-020 comparison uses every retained semantic field and
 association except its stated identity/binding exclusions, preserving order and
@@ -111,7 +109,7 @@ and arbitrary objects are explicit unsupported paths under SYS-004, never `repr`
 fallbacks. Code-point offsets include whitespace and newlines.
 
 This seam is intentionally invasive but narrow: one pinned integration module owns the
-duck typing and version checks, while the snapshot model and future renderers have no
+duck typing and version checks, while the snapshot model and HTML renderer have no
 dependency on Kirin internals.
 
 ## Why a metadata sidecar remains necessary

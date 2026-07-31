@@ -44,9 +44,9 @@ Pass only with durable evidence covering every criterion; omit transient logs.
   selection, provenance, and metadata states without detached focus. Viewer-authored
   text and state cues meet the declared contrast and non-color policy, and every
   consecutive SSA column remains reachable in all declared zoom/viewport combinations.
-- **Status:** planned
-- **Evidence:** None
-- **Nonconformance:** None
+- **Status:** implemented
+- **Evidence:** [Approved fixture and runner handoff](../evidence/acceptance-handoff.md#approved-fixtures-and-runners)
+- **Nonconformance:** Project-developer demonstration or review remains pending.
 
 ## SYSV-018 — Verify autonomous single-file HTML export
 
@@ -75,9 +75,11 @@ Pass only with durable evidence covering every criterion; omit transient logs.
   `wss` request. Missing parents fail; every existing or raced target raises
   `FileExistsError` without changing its bytes; and no failed export leaves a target or
   temporary file.
-- **Status:** planned
-- **Evidence:** None
-- **Nonconformance:** None
+- **Status:** failing
+- **Evidence:** [Pinned browser run and publication counterexample](../evidence/browser-verification.md#known-nonconformances)
+- **Nonconformance:** A publication seam that creates the destination and then raises
+  leaves that target in place while reporting failure, violating the no-target-on-failure
+  criterion. The required universal SYSV-025 layout scenario also fails.
 
 ## SYSV-019 — Verify retained-trace fidelity and inert content
 
@@ -119,6 +121,8 @@ Pass only with durable evidence covering every criterion; omit transient logs.
   absences; zero selection names no event, and parent selection does not copy descendant
   facts. Browser interaction does not alter the source oracle or introduce a second
   authoritative provenance fact.
-- **Status:** planned
-- **Evidence:** None
-- **Nonconformance:** None
+- **Status:** implemented
+- **Evidence:** [Source/wheel](../evidence/source-and-wheel-verification.md#action-audit)
+  and [browser](../evidence/browser-verification.md#action-audit) action audits
+- **Nonconformance:** Empty, complete, and aggregate-incomplete artifacts do not jointly
+  exercise hostile strings across every canonical free-form fact domain.

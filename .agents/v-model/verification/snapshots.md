@@ -24,9 +24,10 @@
   under its correct SSA owner regardless of truthiness; no value is omitted or swapped;
   no retained state contains post-trace sentinel metadata; and the run without supplied
   analysis does not represent analysis as caller-supplied.
-- **Status:** planned
-- **Evidence:** None
-- **Nonconformance:** None
+- **Status:** implemented
+- **Evidence:** [Source and wheel action audit](../evidence/source-and-wheel-verification.md#action-audit)
+- **Nonconformance:** The complete asymmetric metadata inventory and post-capture
+  mutation procedure is not exercised clause-by-clause.
 
 ## SYSV-006 — Verify styled presentation fidelity
 
@@ -54,9 +55,10 @@
   and code-point association; and no hidden width-measurement output appears. Each
   out-of-domain style-meta case explicitly fails under SYS-004 without coercion or a
   successfully reported partial trace.
-- **Status:** planned
-- **Evidence:** None
-- **Nonconformance:** None
+- **Status:** implemented
+- **Evidence:** [Source and wheel action audit](../evidence/source-and-wheel-verification.md#action-audit)
+- **Nonconformance:** The exhaustive direct-printer/highlighter and admitted/rejected
+  Rich style-meta domain is not covered by one independent oracle.
 
 ## SYSV-007 — Verify metadata value representation precedence
 
@@ -79,6 +81,7 @@
   type name and exact selected string: printable empty output remains empty, printable
   internal whitespace receives no project normalization, and a failed printable path
   discards partial output before using its successful `repr()`.
-- **Status:** planned
-- **Evidence:** None
-- **Nonconformance:** None
+- **Status:** implemented
+- **Evidence:** [Source and wheel action audit](../evidence/source-and-wheel-verification.md#action-audit)
+- **Nonconformance:** All specified printable, empty, whitespace, raising, and `repr`
+  precedence cases are not jointly compared with direct path oracles.

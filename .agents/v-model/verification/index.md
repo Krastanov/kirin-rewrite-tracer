@@ -1,11 +1,15 @@
 # Verification and Acceptance Actions
 
 Mark an action `passing` only when durable evidence exercises every pass-criterion
-clause; do not paste transient logs.
+clause; do not paste transient logs. The current release audit records 7 `passing`, 33
+`implemented`, and 7 `failing` actions.
 
 Non-browser source and installed-distribution verification covers CPython 3.10, 3.11,
 3.12, and 3.13. Browser verification uses CPython 3.13.11 only as the producer runtime
 and does not broaden the pinned browser claim.
+
+Open the [evidence index](../evidence/index.md) for exact environments, commands,
+clause audits, counterexamples, and the pending acceptance handoff.
 
 ## Approved v1 acceptance fixtures
 

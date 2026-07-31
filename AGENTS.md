@@ -2,9 +2,8 @@
 
 ## Scope
 
-This file applies repository-wide. This is an independent repository inside the Kirin
-development workspace; sibling repositories are evidence or dependencies, not code roots
-owned here.
+This independent repository sits in the Kirin development workspace; siblings are
+evidence or dependencies, not owned code roots.
 
 The Python library code root is `src/`, and the corresponding test root is the singular
 `test/` directory. Read the nested router in either root before changing files there.
@@ -42,17 +41,14 @@ The Python library code root is `src/`, and the corresponding test root is the s
   provenance persistence.
 - Open [the structured invocation-stack storage options](.agents/context/invocation-stack-storage.md)
   when working on stack capture, lifetime, paths, or presentation.
-- Read the closest nested `AGENTS.md` before editing a future code root or subsystem.
+- Read the closest nested `AGENTS.md` before editing a code root or subsystem.
 
 ## Current boundaries
 
-- The standalone Python package is `kirin_rewrite_tracer` under `src/`. Hatchling builds
-  it, uv resolves and runs its environment, and `test/` contains the pytest suite. The
-  package intentionally exposes no capture API until the relevant implementation
-  contracts are implemented.
-- The current snapshot recommendation is a
-  renderer-neutral text, style-span, entity-occurrence, metadata-record, and
-  partial-but-exact provenance model with neutral incomplete events, single-copy
+- `src/kirin_rewrite_tracer` exposes the implemented session, immutable model, and HTML
+  export API. Hatchling builds it; uv runs it; `test/` holds the pytest suite.
+- The implemented snapshot model is renderer-neutral text, styles, occurrences,
+  metadata, partial-but-exact provenance, neutral incomplete events, single-copy
   relations, and selected statement-deletion effects.
 - Complete and incomplete traces have one confirmed offline presentation target: a
   self-contained HTML file with embedded inert data and no server or external resource
@@ -65,6 +61,9 @@ The Python library code root is `src/`, and the corresponding test root is the s
   Definition-only type suffixes and one read-only metadata disclosure use a fixed dark
   semantic cascade; custom search/filter, graph views, themes, mobile layout, print, and
   UI persistence are outside v1.
+- Open the [verification evidence index](.agents/v-model/evidence/index.md) before
+  making a conformance claim. Invalid-`self` detection, post-link publication failure,
+  and unbounded Blink layout extent have recorded nonconformances.
 
 ## Commands
 

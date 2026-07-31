@@ -16,11 +16,10 @@ Production package code lives only in `kirin_rewrite_tracer/`.
 
 - Keep the package standalone; do not modify or import source from the sibling checkout
   by filesystem path.
-- Keep Kirin- and Rich-specific behavior inside a pinned compatibility boundary when it
-  is introduced. Open
+- Keep Kirin- and Rich-specific behavior inside the pinned compatibility boundary. Open
   [the Kirin integration reference](../.agents/context/kirin-integration.md) before
   implementing that boundary.
-- Do not export capture API placeholders. Add root exports only with their implemented
-  contracts and tests.
-- Store future classic JavaScript and CSS viewer assets beneath
+- Preserve the six implemented root exports and add another only with its contract and
+  tests.
+- Store classic JavaScript and CSS viewer assets beneath
   `kirin_rewrite_tracer/assets/`; Hatch includes those file types in the wheel.

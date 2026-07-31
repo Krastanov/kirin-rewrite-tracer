@@ -81,6 +81,8 @@ oracles.
   no-selection facts state, and retains focus on Clear; repeated Clear is idempotent.
   The next row activation selects normally and event rows retain their non-toggle
   behavior.
-- **Status:** planned
-- **Evidence:** None
-- **Nonconformance:** None
+- **Status:** implemented
+- **Evidence:** [Pinned browser action audit](../evidence/browser-verification.md#action-audit)
+- **Nonconformance:** Isolated metadata namespace/key/schema and rendered-value
+  qualified-type near-misses are not all exercised, so the full semantic-class
+  near-miss procedure remains incomplete.

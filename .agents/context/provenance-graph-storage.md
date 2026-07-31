@@ -54,12 +54,14 @@ is a historical operation occurrence, never a permanent entity property.
 
 ## Recommended factored storage
 
-Names remain illustrative until component contracts are baselined:
+The exact frozen records live in
+[`_model.py`](../../src/kirin_rewrite_tracer/_model.py) under CMP-001/CMP-007. The
+implemented ownership shape is:
 
 ```text
-TraceEntity[id, kind, qualified_type]
-SnapshotEntity[snapshot_id, entity_id]
-EntityOccurrence[snapshot_id, entity_id, role, start, end]
+TraceEntity[id, kind, qualified_type, defining_owner_id]
+Snapshot[..., entity_ids, occurrence_ids, ...]
+EntityOccurrence[id, snapshot_id, entity_id, role, start, end]
 
 MutationOperation[
   id, sequence, owner_event_id, parent_operation_id, api,

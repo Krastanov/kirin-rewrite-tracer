@@ -10,8 +10,8 @@
 - **Environment / configuration:** Isolated supported CPython processes under SUB-002.
 - **Pass criterion:** Every state, trace/error/result identity, denial, analysis-copy,
   falsey-value, cleanup, and collectability result exactly matches SUB-001.
-- **Status:** planned
-- **Evidence:** None
+- **Status:** passing
+- **Evidence:** [Source and wheel action audit](../evidence/source-and-wheel-verification.md#action-audit)
 - **Nonconformance:** None
 
 ## INTV-002 — Verify compatibility preflight and rejection
@@ -27,9 +27,10 @@
 - **Pass criterion:** Only the exact supported configuration activates; every invalid
   preflight leaves no installation; each observable unsupported path invalidates without
   a trace; fingerprints and assumption cases establish no support claim.
-- **Status:** planned
-- **Evidence:** None
-- **Nonconformance:** None
+- **Status:** failing
+- **Evidence:** [Detector portability inspection and executable counterexample](../evidence/detector-portability-inspection.md#executable-invalid-self-counterexample)
+- **Nonconformance:** The observable invalid-`self` direct-override path completes
+  without invalidation and exposes a complete empty trace.
 
 ## INTV-003 — Verify immutable canonical trace integration
 
@@ -42,9 +43,10 @@
 - **Pass criterion:** Valid traces freeze/release deeply; every malformed graph fails;
   IDs never use process identity; external owners persist; equality and rebuilt reverse,
   line, identity, and unmatched queries match independent oracles.
-- **Status:** planned
-- **Evidence:** None
-- **Nonconformance:** None
+- **Status:** implemented
+- **Evidence:** [Source and wheel action audit](../evidence/source-and-wheel-verification.md#action-audit)
+- **Nonconformance:** Forced object-ID reuse and every graph/equality/index injection are
+  not all exercised as one complete integration procedure.
 
 ## INTV-004 — Verify pinned snapshot capture integration
 
@@ -58,9 +60,10 @@
 - **Pass criterion:** One root execution yields exact Unicode, styles, roles, owners,
   metadata distinctions, and code-point runs; every unsupported path invalidates with no
   partial trace.
-- **Status:** planned
-- **Evidence:** None
-- **Nonconformance:** None
+- **Status:** implemented
+- **Evidence:** [Source and wheel action audit](../evidence/source-and-wheel-verification.md#action-audit)
+- **Nonconformance:** The full instrumented capture-path inventory is not executed with
+  independent printer/IR tags on every supported minor.
 
 ## INTV-005 — Verify mutation and stack transaction integration
 
@@ -75,8 +78,8 @@
 - **Pass criterion:** Operations, facts, hierarchy, stacks, binding, and result/exception
   identity match independent logs; bypass invalidates; outside calls add no operation;
   rollback/restoration never clobbers; retained stacks keep no frame live.
-- **Status:** planned
-- **Evidence:** None
+- **Status:** passing
+- **Evidence:** [Source and wheel action audit](../evidence/source-and-wheel-verification.md#action-audit)
 - **Nonconformance:** None
 
 ## INTV-006 — Verify atomic no-overwrite publication
@@ -91,9 +94,11 @@
 - **Pass criterion:** Success returns one autonomous file without mutation/request;
   invalid targets and failures preserve existing bytes and leave no target or temporary
   file; hostile content remains inert.
-- **Status:** planned
-- **Evidence:** None
-- **Nonconformance:** None
+- **Status:** failing
+- **Evidence:** [Publication counterexample and pinned browser run](../evidence/browser-verification.md#known-nonconformances)
+- **Nonconformance:** If final publication creates the destination and then raises, the
+  export reports failure but leaves the target; this violates the no-target-on-failure
+  pass criterion.
 
 ## INTV-007 — Verify canonical viewer projection
 
@@ -107,9 +112,11 @@
 - **Pass criterion:** Every frontier, anchor, row, column, edge, and highlight matches
   independent oracles; Clear restores zero state; selected facts contain exactly owned
   fields/absences and never copied descendant facts; canonical input is unchanged.
-- **Status:** planned
-- **Evidence:** None
-- **Nonconformance:** None
+- **Status:** implemented
+- **Evidence:** [Source/wheel](../evidence/source-and-wheel-verification.md#action-audit)
+  and [browser](../evidence/browser-verification.md#action-audit) action audits
+- **Nonconformance:** The complete reducer cross-product and every metadata-schema
+  near-miss/interleaving are not covered by one clause-complete durable action.
 
 ## INTV-008 — Verify accessibility and fixed presentation
 
@@ -124,6 +131,7 @@
 - **Pass criterion:** Native semantics, focus/state, cues/styles, and announcements match
   oracles; all supported layouts remain consecutive, unwrapped, reachable, and operable;
   no smaller-viewport result is represented as support.
-- **Status:** planned
-- **Evidence:** None
-- **Nonconformance:** None
+- **Status:** failing
+- **Evidence:** [Large-viewport analysis and pinned-Blink counterexample](../evidence/sysv-025-layout-invariant.md)
+- **Nonconformance:** Valid unbounded snapshot text exceeds pinned Blink's scroll extent
+  at both zooms, leaving a later nonzero control unreachable and inoperable.

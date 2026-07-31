@@ -16,6 +16,8 @@ guidance.
 - Build expected values from fixture construction and independent observations, not from
   tracer helpers that implement the behavior under test.
 - Keep source tests portable across CPython 3.10 through 3.13. Mark headed-Chrome tests
-  with `pytest.mark.browser` when that harness is introduced.
+  with `pytest.mark.browser` and use the pinned shared harness.
+- A passing counterexample regression may bind a known nonconformance; do not cite the
+  aggregate green suite as proof that the violated clause conforms.
 - Keep generated browser profiles, downloads, screenshots, reports, and logs outside the
   repository.
