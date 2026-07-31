@@ -50,6 +50,102 @@ HANDOFF_IDS = {
     "G": "event-6",
 }
 
+COARSE_PROVENANCE_EVENT_ID = "event-1"
+COARSE_PROVENANCE_ENTITY_IDS = {
+    "root": "entity-0",
+    "survivor": "entity-1",
+    "split_source": "entity-2",
+    "split_destination_left": "entity-3",
+    "split_destination_right": "entity-4",
+    "merge_source_left": "entity-5",
+    "merge_source_right": "entity-6",
+    "merge_destination": "entity-7",
+    "duplicate_source": "entity-8",
+    "duplicate_destination": "entity-9",
+    "depth_1_source": "entity-10",
+    "depth_1_destination": "entity-11",
+    "depth_2_source": "entity-12",
+    "depth_2_destination": "entity-13",
+    "depth_5_source": "entity-14",
+    "depth_5_destination": "entity-15",
+    "incomplete_child_source": "entity-16",
+    "incomplete_child_destination": "entity-17",
+    "ancestor_source": "entity-18",
+    "ancestor_destination": "entity-19",
+    "sibling_source": "entity-20",
+    "sibling_destination": "entity-21",
+    "missing_source": "entity-22",
+    "missing_destination": "entity-23",
+    "reversed_source": "entity-24",
+    "reversed_destination": "entity-25",
+    "path_source": "entity-26",
+    "path_middle": "entity-27",
+    "path_destination": "entity-28",
+    "zero_use_source": "entity-29",
+    "zero_use_destination": "entity-30",
+    "incomplete_operation_source": "entity-31",
+    "incomplete_operation_destination": "entity-32",
+    "similar_before": "entity-33",
+    "similar_after": "entity-34",
+    "non_ssa_destination": "entity-35",
+    "deleted_statement": "entity-36",
+}
+COARSE_PROVENANCE_RELATION_IDS = {
+    "split_left": "relation-0",
+    "split_right": "relation-1",
+    "merge_left": "relation-2",
+    "merge_right": "relation-3",
+    "duplicate_first": "relation-4",
+    "duplicate_second": "relation-5",
+    "depth_1": "relation-6",
+    "depth_2": "relation-7",
+    "depth_5": "relation-8",
+    "incomplete_child": "relation-9",
+    "ancestor": "relation-10",
+    "sibling": "relation-11",
+    "missing": "relation-12",
+    "reversed": "relation-13",
+    "path_first": "relation-14",
+    "path_second": "relation-15",
+    "non_ssa": "relation-16",
+}
+
+PIPELINE_EVENT_IDS = {
+    "A": "event-0",
+    "B": "event-1",
+    "C": "event-2",
+    "D": "event-3",
+    "E": "event-4",
+    "F": "event-5",
+    "G": "event-6",
+    "D_CHILD": "event-7",
+}
+PIPELINE_ENTITY_IDS = {
+    "root": "entity-0",
+    "left": "entity-1",
+    "middle_left": "entity-2",
+    "middle_right": "entity-3",
+    "right": "entity-4",
+    "handoff_survivor": "entity-5",
+    "similar_left": "entity-6",
+    "similar_right": "entity-7",
+    "handoff_relation_source": "entity-8",
+    "handoff_relation_destination": "entity-9",
+    "barrier_survivor": "entity-10",
+    "incomplete_relation_source": "entity-11",
+    "incomplete_relation_destination": "entity-12",
+}
+PIPELINE_RELATION_IDS = {
+    "A": "relation-0",
+    "B": "relation-1",
+    "C": "relation-2",
+    "handoff_owner_d": "relation-3",
+    "handoff_owner_e": "relation-4",
+    "handoff_owner_d_child": "relation-5",
+    "handoff_owner_d_ancestor": "relation-6",
+    "incomplete_event_must_not_cross": "relation-7",
+}
+
 
 @dataclass(frozen=True, slots=True)
 class EventSpec:
@@ -57,6 +153,22 @@ class EventSpec:
     parent: str | None
     before: str
     after: str | None
+
+
+@dataclass(frozen=True, slots=True)
+class SSAOccurrenceSpec:
+    entity_id: str
+    role: str
+    text: str
+
+
+@dataclass(frozen=True, slots=True)
+class OperationSpec:
+    owner_event_id: str
+    api: str
+    outcome: str
+    source_entity_ids: tuple[str, ...]
+    destination_entity_ids: tuple[str, ...]
 
 
 def selection_trace() -> Trace:
@@ -402,6 +514,918 @@ def facts_trace() -> Trace:
     )
 
 
+def coarse_provenance_trace() -> Trace:
+    configuration = _configuration()
+    styles = (StyleRecord("style-0"), StyleRecord("style-1", bold=True))
+    entity_ids = COARSE_PROVENANCE_ENTITY_IDS
+    entities = [TraceEntity(entity_ids["root"], "statement", "fixture.Root")]
+    for index in range(1, 35):
+        qualified_type = (
+            "fixture.SimilarValue" if index in {33, 34} else f"fixture.Value{index}"
+        )
+        entities.append(
+            TraceEntity(
+                f"entity-{index}",
+                "ssa",
+                qualified_type,
+                entity_ids["root"],
+            )
+        )
+    entities.extend(
+        (
+            TraceEntity(
+                entity_ids["non_ssa_destination"],
+                "statement",
+                "fixture.NonSSA",
+            ),
+            TraceEntity(
+                entity_ids["deleted_statement"],
+                "statement",
+                "fixture.Deleted",
+            ),
+        )
+    )
+
+    snapshots: list[Snapshot] = []
+    occurrences: list[EntityOccurrence] = []
+    ancestor_before = _append_snapshot(
+        snapshots,
+        occurrences,
+        event_id="event-0",
+        state="before",
+        root_entity_id=entity_ids["root"],
+        text="ancestor before",
+        entity_ids=(entity_ids["root"],),
+    )
+    ancestor_after = _append_snapshot(
+        snapshots,
+        occurrences,
+        event_id="event-0",
+        state="after",
+        root_entity_id=entity_ids["root"],
+        text="ancestor after",
+        entity_ids=(entity_ids["root"],),
+    )
+    parent_before = _append_ssa_snapshot(
+        snapshots,
+        occurrences,
+        event_id=COARSE_PROVENANCE_EVENT_ID,
+        state="before",
+        root_entity_id=entity_ids["root"],
+        values=(
+            SSAOccurrenceSpec(entity_ids["survivor"], "definition", "%stay😀"),
+            SSAOccurrenceSpec(entity_ids["survivor"], "reference", "%stay😀"),
+            SSAOccurrenceSpec(entity_ids["split_source"], "definition", "%split"),
+            SSAOccurrenceSpec(
+                entity_ids["merge_source_left"], "definition", "%merge-left"
+            ),
+            SSAOccurrenceSpec(
+                entity_ids["merge_source_left"], "reference", "%merge-left"
+            ),
+            SSAOccurrenceSpec(
+                entity_ids["merge_source_right"], "definition", "%merge-right"
+            ),
+            SSAOccurrenceSpec(
+                entity_ids["duplicate_source"], "definition", "%duplicate"
+            ),
+            SSAOccurrenceSpec(entity_ids["depth_1_source"], "definition", "%depth-one"),
+            SSAOccurrenceSpec(entity_ids["depth_2_source"], "definition", "%depth-two"),
+            SSAOccurrenceSpec(
+                entity_ids["depth_5_source"], "definition", "%depth-five"
+            ),
+            SSAOccurrenceSpec(
+                entity_ids["incomplete_child_source"],
+                "definition",
+                "%caught-incomplete",
+            ),
+            SSAOccurrenceSpec(entity_ids["ancestor_source"], "definition", "%ancestor"),
+            SSAOccurrenceSpec(entity_ids["sibling_source"], "definition", "%sibling"),
+            SSAOccurrenceSpec(entity_ids["missing_source"], "definition", "%missing"),
+            SSAOccurrenceSpec(
+                entity_ids["reversed_destination"], "definition", "%reversed"
+            ),
+            SSAOccurrenceSpec(entity_ids["path_source"], "definition", "%two-edge"),
+            SSAOccurrenceSpec(
+                entity_ids["path_middle"], "reference", "%two-edge-middle"
+            ),
+            SSAOccurrenceSpec(entity_ids["zero_use_source"], "definition", "%zero-use"),
+            SSAOccurrenceSpec(
+                entity_ids["incomplete_operation_source"],
+                "definition",
+                "%incomplete-operation",
+            ),
+            SSAOccurrenceSpec(
+                entity_ids["similar_before"], "definition", "%looks-the-same"
+            ),
+        ),
+        split_first_occurrence=True,
+    )
+    parent_after = _append_ssa_snapshot(
+        snapshots,
+        occurrences,
+        event_id=COARSE_PROVENANCE_EVENT_ID,
+        state="after",
+        root_entity_id=entity_ids["root"],
+        values=(
+            SSAOccurrenceSpec(entity_ids["survivor"], "reference", "%stay😀"),
+            SSAOccurrenceSpec(entity_ids["survivor"], "reference", "%stay😀"),
+            SSAOccurrenceSpec(
+                entity_ids["split_destination_left"], "definition", "%split-left"
+            ),
+            SSAOccurrenceSpec(
+                entity_ids["split_destination_left"], "reference", "%split-left"
+            ),
+            SSAOccurrenceSpec(
+                entity_ids["split_destination_right"],
+                "definition",
+                "%split-right",
+            ),
+            SSAOccurrenceSpec(entity_ids["merge_destination"], "definition", "%merged"),
+            SSAOccurrenceSpec(entity_ids["merge_destination"], "reference", "%merged"),
+            SSAOccurrenceSpec(
+                entity_ids["duplicate_destination"], "definition", "%duplicate"
+            ),
+            SSAOccurrenceSpec(
+                entity_ids["depth_1_destination"], "definition", "%depth-one"
+            ),
+            SSAOccurrenceSpec(
+                entity_ids["depth_2_destination"], "definition", "%depth-two"
+            ),
+            SSAOccurrenceSpec(
+                entity_ids["depth_5_destination"], "definition", "%depth-five"
+            ),
+            SSAOccurrenceSpec(
+                entity_ids["incomplete_child_destination"],
+                "definition",
+                "%caught-incomplete",
+            ),
+            SSAOccurrenceSpec(
+                entity_ids["ancestor_destination"], "definition", "%ancestor"
+            ),
+            SSAOccurrenceSpec(
+                entity_ids["sibling_destination"], "definition", "%sibling"
+            ),
+            SSAOccurrenceSpec(entity_ids["reversed_source"], "definition", "%reversed"),
+            SSAOccurrenceSpec(
+                entity_ids["path_destination"], "definition", "%two-edge"
+            ),
+            SSAOccurrenceSpec(
+                entity_ids["path_middle"], "reference", "%two-edge-middle"
+            ),
+            SSAOccurrenceSpec(
+                entity_ids["zero_use_destination"], "definition", "%zero-use"
+            ),
+            SSAOccurrenceSpec(
+                entity_ids["incomplete_operation_destination"],
+                "definition",
+                "%incomplete-operation",
+            ),
+            SSAOccurrenceSpec(
+                entity_ids["similar_after"], "definition", "%looks-the-same"
+            ),
+        ),
+        container_entity_ids=(entity_ids["non_ssa_destination"],),
+    )
+
+    minimal_bindings: list[tuple[str, str, str | None]] = []
+    for event_index, label in (
+        (2, "depth one"),
+        (3, "depth two"),
+        (4, "depth three"),
+        (5, "depth four"),
+        (6, "depth five"),
+    ):
+        before = _append_snapshot(
+            snapshots,
+            occurrences,
+            event_id=f"event-{event_index}",
+            state="before",
+            root_entity_id=entity_ids["root"],
+            text=f"{label} before",
+            entity_ids=(entity_ids["root"],),
+        )
+        after = _append_snapshot(
+            snapshots,
+            occurrences,
+            event_id=f"event-{event_index}",
+            state="after",
+            root_entity_id=entity_ids["root"],
+            text=f"{label} after",
+            entity_ids=(entity_ids["root"],),
+        )
+        minimal_bindings.append((f"event-{event_index}", before, after))
+    incomplete_before = _append_snapshot(
+        snapshots,
+        occurrences,
+        event_id="event-7",
+        state="before",
+        root_entity_id=entity_ids["root"],
+        text="caught incomplete descendant",
+        entity_ids=(entity_ids["root"],),
+    )
+    sibling_before = _append_snapshot(
+        snapshots,
+        occurrences,
+        event_id="event-8",
+        state="before",
+        root_entity_id=entity_ids["root"],
+        text="sibling before",
+        entity_ids=(entity_ids["root"],),
+    )
+    sibling_after = _append_snapshot(
+        snapshots,
+        occurrences,
+        event_id="event-8",
+        state="after",
+        root_entity_id=entity_ids["root"],
+        text="sibling after",
+        entity_ids=(entity_ids["root"],),
+    )
+
+    events = (
+        _fixture_event(
+            "event-0",
+            0,
+            None,
+            0,
+            "AncestorRule",
+            entity_ids["root"],
+            ancestor_before,
+            ancestor_after,
+        ),
+        _fixture_event(
+            COARSE_PROVENANCE_EVENT_ID,
+            1,
+            "event-0",
+            0,
+            "CoarseParentRule",
+            entity_ids["root"],
+            parent_before,
+            parent_after,
+        ),
+        _fixture_event(
+            "event-2",
+            2,
+            COARSE_PROVENANCE_EVENT_ID,
+            0,
+            "DepthOneRule",
+            entity_ids["root"],
+            minimal_bindings[0][1],
+            minimal_bindings[0][2],
+        ),
+        _fixture_event(
+            "event-3",
+            3,
+            "event-2",
+            0,
+            "DepthTwoRule",
+            entity_ids["root"],
+            minimal_bindings[1][1],
+            minimal_bindings[1][2],
+        ),
+        _fixture_event(
+            "event-4",
+            4,
+            "event-3",
+            0,
+            "DepthThreeRule",
+            entity_ids["root"],
+            minimal_bindings[2][1],
+            minimal_bindings[2][2],
+        ),
+        _fixture_event(
+            "event-5",
+            5,
+            "event-4",
+            0,
+            "DepthFourRule",
+            entity_ids["root"],
+            minimal_bindings[3][1],
+            minimal_bindings[3][2],
+        ),
+        _fixture_event(
+            "event-6",
+            6,
+            "event-5",
+            0,
+            "DepthFiveRule",
+            entity_ids["root"],
+            minimal_bindings[4][1],
+            minimal_bindings[4][2],
+        ),
+        _fixture_event(
+            "event-7",
+            7,
+            COARSE_PROVENANCE_EVENT_ID,
+            1,
+            "CaughtIncompleteRule",
+            entity_ids["root"],
+            incomplete_before,
+            None,
+        ),
+        _fixture_event(
+            "event-8",
+            8,
+            "event-0",
+            1,
+            "SiblingRule",
+            entity_ids["root"],
+            sibling_before,
+            sibling_after,
+        ),
+    )
+    operation_specs = (
+        OperationSpec(
+            COARSE_PROVENANCE_EVENT_ID,
+            "SSAValue.replace_by",
+            "completed",
+            (entity_ids["split_source"],),
+            (entity_ids["split_destination_left"],),
+        ),
+        OperationSpec(
+            COARSE_PROVENANCE_EVENT_ID,
+            "SSAValue.replace_by",
+            "completed",
+            (entity_ids["split_source"],),
+            (entity_ids["split_destination_right"],),
+        ),
+        OperationSpec(
+            COARSE_PROVENANCE_EVENT_ID,
+            "SSAValue.replace_by",
+            "completed",
+            (entity_ids["merge_source_left"],),
+            (entity_ids["merge_destination"],),
+        ),
+        OperationSpec(
+            COARSE_PROVENANCE_EVENT_ID,
+            "SSAValue.replace_by",
+            "completed",
+            (entity_ids["merge_source_right"],),
+            (entity_ids["merge_destination"],),
+        ),
+        OperationSpec(
+            COARSE_PROVENANCE_EVENT_ID,
+            "SSAValue.replace_by",
+            "completed",
+            (entity_ids["duplicate_source"],),
+            (entity_ids["duplicate_destination"],),
+        ),
+        OperationSpec(
+            COARSE_PROVENANCE_EVENT_ID,
+            "SSAValue.replace_by",
+            "completed",
+            (entity_ids["duplicate_source"],),
+            (entity_ids["duplicate_destination"],),
+        ),
+        OperationSpec(
+            "event-2",
+            "SSAValue.replace_by",
+            "completed",
+            (entity_ids["depth_1_source"],),
+            (entity_ids["depth_1_destination"],),
+        ),
+        OperationSpec(
+            "event-3",
+            "SSAValue.replace_by",
+            "completed",
+            (entity_ids["depth_2_source"],),
+            (entity_ids["depth_2_destination"],),
+        ),
+        OperationSpec(
+            "event-6",
+            "SSAValue.replace_by",
+            "completed",
+            (entity_ids["depth_5_source"],),
+            (entity_ids["depth_5_destination"],),
+        ),
+        OperationSpec(
+            "event-7",
+            "SSAValue.replace_by",
+            "completed",
+            (entity_ids["incomplete_child_source"],),
+            (entity_ids["incomplete_child_destination"],),
+        ),
+        OperationSpec(
+            "event-0",
+            "SSAValue.replace_by",
+            "completed",
+            (entity_ids["ancestor_source"],),
+            (entity_ids["ancestor_destination"],),
+        ),
+        OperationSpec(
+            "event-8",
+            "SSAValue.replace_by",
+            "completed",
+            (entity_ids["sibling_source"],),
+            (entity_ids["sibling_destination"],),
+        ),
+        OperationSpec(
+            COARSE_PROVENANCE_EVENT_ID,
+            "SSAValue.replace_by",
+            "completed",
+            (entity_ids["missing_source"],),
+            (entity_ids["missing_destination"],),
+        ),
+        OperationSpec(
+            COARSE_PROVENANCE_EVENT_ID,
+            "SSAValue.replace_by",
+            "completed",
+            (entity_ids["reversed_source"],),
+            (entity_ids["reversed_destination"],),
+        ),
+        OperationSpec(
+            COARSE_PROVENANCE_EVENT_ID,
+            "SSAValue.replace_by",
+            "completed",
+            (entity_ids["path_source"],),
+            (entity_ids["path_middle"],),
+        ),
+        OperationSpec(
+            COARSE_PROVENANCE_EVENT_ID,
+            "SSAValue.replace_by",
+            "completed",
+            (entity_ids["path_middle"],),
+            (entity_ids["path_destination"],),
+        ),
+        OperationSpec(
+            COARSE_PROVENANCE_EVENT_ID,
+            "Statement.replace_by",
+            "completed",
+            (entity_ids["root"],),
+            (entity_ids["non_ssa_destination"],),
+        ),
+        OperationSpec(
+            COARSE_PROVENANCE_EVENT_ID,
+            "SSAValue.replace_by",
+            "completed",
+            (entity_ids["zero_use_source"],),
+            (entity_ids["zero_use_destination"],),
+        ),
+        OperationSpec(
+            COARSE_PROVENANCE_EVENT_ID,
+            "SSAValue.replace_by",
+            "incomplete",
+            (entity_ids["incomplete_operation_source"],),
+            (entity_ids["incomplete_operation_destination"],),
+        ),
+        OperationSpec(
+            COARSE_PROVENANCE_EVENT_ID,
+            "Statement.delete",
+            "completed",
+            (entity_ids["deleted_statement"],),
+            (),
+        ),
+    )
+    operations = tuple(
+        MutationOperation(
+            f"operation-{sequence}",
+            sequence,
+            specification.owner_event_id,
+            None,
+            specification.api,
+            specification.outcome,
+            specification.source_entity_ids,
+            specification.destination_entity_ids,
+            "stack-0",
+        )
+        for sequence, specification in enumerate(operation_specs)
+    )
+    relation_specs = (
+        ("ssa_uses_retargeted_to", "split_source", "split_destination_left", 0),
+        ("ssa_uses_retargeted_to", "split_source", "split_destination_right", 1),
+        ("ssa_uses_retargeted_to", "merge_source_left", "merge_destination", 2),
+        ("ssa_uses_retargeted_to", "merge_source_right", "merge_destination", 3),
+        ("ssa_uses_retargeted_to", "duplicate_source", "duplicate_destination", 4),
+        ("ssa_uses_retargeted_to", "duplicate_source", "duplicate_destination", 5),
+        ("ssa_uses_retargeted_to", "depth_1_source", "depth_1_destination", 6),
+        ("ssa_uses_retargeted_to", "depth_2_source", "depth_2_destination", 7),
+        ("ssa_uses_retargeted_to", "depth_5_source", "depth_5_destination", 8),
+        (
+            "ssa_uses_retargeted_to",
+            "incomplete_child_source",
+            "incomplete_child_destination",
+            9,
+        ),
+        ("ssa_uses_retargeted_to", "ancestor_source", "ancestor_destination", 10),
+        ("ssa_uses_retargeted_to", "sibling_source", "sibling_destination", 11),
+        ("ssa_uses_retargeted_to", "missing_source", "missing_destination", 12),
+        ("ssa_uses_retargeted_to", "reversed_source", "reversed_destination", 13),
+        ("ssa_uses_retargeted_to", "path_source", "path_middle", 14),
+        ("ssa_uses_retargeted_to", "path_middle", "path_destination", 15),
+        ("statement_replaced_by", "root", "non_ssa_destination", 16),
+    )
+    relations = tuple(
+        ProvenanceRelation(
+            f"relation-{sequence}",
+            basis,
+            entity_ids[source_label],
+            entity_ids[destination_label],
+            f"operation-{operation_index}",
+        )
+        for sequence, (
+            basis,
+            source_label,
+            destination_label,
+            operation_index,
+        ) in enumerate(relation_specs)
+    )
+    effect = EntityEffect(
+        "effect-0",
+        "statement_delete_completed",
+        entity_ids["deleted_statement"],
+        "operation-19",
+    )
+    stack = InvocationStack(
+        "stack-0", (FrameLocation("coarse_provenance.py", 17, "rewrite"),)
+    )
+    return Trace(
+        schema_version=1,
+        complete=False,
+        configurations=(configuration,),
+        styles=styles,
+        entities=tuple(entities),
+        snapshots=tuple(snapshots),
+        occurrences=tuple(occurrences),
+        stacks=(stack,),
+        events=events,
+        operations=operations,
+        relations=relations,
+        effects=(effect,),
+    )
+
+
+def pipeline_provenance_trace() -> Trace:
+    configuration = _configuration()
+    style = StyleRecord("style-0")
+    entity_ids = PIPELINE_ENTITY_IDS
+    entities = (
+        TraceEntity(entity_ids["root"], "statement", "fixture.PipelineRoot"),
+        *(
+            TraceEntity(
+                f"entity-{index}",
+                "ssa",
+                (
+                    "fixture.SimilarValue"
+                    if index in {6, 7}
+                    else f"fixture.PipelineValue{index}"
+                ),
+                entity_ids["root"],
+            )
+            for index in range(1, 13)
+        ),
+    )
+    snapshots: list[Snapshot] = []
+    occurrences: list[EntityOccurrence] = []
+    a_before = _append_ssa_snapshot(
+        snapshots,
+        occurrences,
+        event_id=PIPELINE_EVENT_IDS["A"],
+        state="before",
+        root_entity_id=entity_ids["root"],
+        values=(SSAOccurrenceSpec(entity_ids["left"], "definition", "%left"),),
+    )
+    a_after = _append_ssa_snapshot(
+        snapshots,
+        occurrences,
+        event_id=PIPELINE_EVENT_IDS["A"],
+        state="after",
+        root_entity_id=entity_ids["root"],
+        values=(
+            SSAOccurrenceSpec(entity_ids["middle_left"], "reference", "%middle-left"),
+            SSAOccurrenceSpec(entity_ids["middle_left"], "reference", "%middle-left"),
+        ),
+    )
+    b_before = _append_ssa_snapshot(
+        snapshots,
+        occurrences,
+        event_id=PIPELINE_EVENT_IDS["B"],
+        state="before",
+        root_entity_id=entity_ids["root"],
+        values=(
+            SSAOccurrenceSpec(entity_ids["middle_left"], "reference", "%middle-left"),
+            SSAOccurrenceSpec(entity_ids["middle_left"], "reference", "%middle-left"),
+        ),
+    )
+    b_after = _append_ssa_snapshot(
+        snapshots,
+        occurrences,
+        event_id=PIPELINE_EVENT_IDS["B"],
+        state="after",
+        root_entity_id=entity_ids["root"],
+        values=(
+            SSAOccurrenceSpec(entity_ids["middle_right"], "reference", "%middle-right"),
+            SSAOccurrenceSpec(entity_ids["middle_right"], "reference", "%middle-right"),
+        ),
+    )
+    c_before = _append_ssa_snapshot(
+        snapshots,
+        occurrences,
+        event_id=PIPELINE_EVENT_IDS["C"],
+        state="before",
+        root_entity_id=entity_ids["root"],
+        values=(
+            SSAOccurrenceSpec(entity_ids["middle_right"], "reference", "%middle-right"),
+            SSAOccurrenceSpec(entity_ids["middle_right"], "reference", "%middle-right"),
+        ),
+    )
+    c_after = _append_ssa_snapshot(
+        snapshots,
+        occurrences,
+        event_id=PIPELINE_EVENT_IDS["C"],
+        state="after",
+        root_entity_id=entity_ids["root"],
+        values=(SSAOccurrenceSpec(entity_ids["right"], "definition", "%right"),),
+    )
+    d_before = _append_ssa_snapshot(
+        snapshots,
+        occurrences,
+        event_id=PIPELINE_EVENT_IDS["D"],
+        state="before",
+        root_entity_id=entity_ids["root"],
+        values=(
+            SSAOccurrenceSpec(
+                entity_ids["handoff_relation_source"],
+                "definition",
+                "%handoff-source",
+            ),
+        ),
+    )
+    d_after = _append_ssa_snapshot(
+        snapshots,
+        occurrences,
+        event_id=PIPELINE_EVENT_IDS["D"],
+        state="after",
+        root_entity_id=entity_ids["root"],
+        values=(
+            SSAOccurrenceSpec(entity_ids["handoff_survivor"], "reference", "%survivor"),
+            SSAOccurrenceSpec(entity_ids["handoff_survivor"], "reference", "%survivor"),
+            SSAOccurrenceSpec(
+                entity_ids["handoff_relation_source"],
+                "reference",
+                "%handoff-source",
+            ),
+            SSAOccurrenceSpec(
+                entity_ids["handoff_relation_destination"],
+                "definition",
+                "%handoff-destination",
+            ),
+            SSAOccurrenceSpec(
+                entity_ids["similar_left"], "definition", "%looks-the-same"
+            ),
+        ),
+    )
+    e_before = _append_ssa_snapshot(
+        snapshots,
+        occurrences,
+        event_id=PIPELINE_EVENT_IDS["E"],
+        state="before",
+        root_entity_id=entity_ids["root"],
+        values=(
+            SSAOccurrenceSpec(entity_ids["handoff_survivor"], "reference", "%survivor"),
+            SSAOccurrenceSpec(entity_ids["handoff_survivor"], "reference", "%survivor"),
+            SSAOccurrenceSpec(
+                entity_ids["handoff_relation_destination"],
+                "reference",
+                "%handoff-destination",
+            ),
+            SSAOccurrenceSpec(
+                entity_ids["similar_right"], "definition", "%looks-the-same"
+            ),
+        ),
+    )
+    e_after = _append_ssa_snapshot(
+        snapshots,
+        occurrences,
+        event_id=PIPELINE_EVENT_IDS["E"],
+        state="after",
+        root_entity_id=entity_ids["root"],
+        values=(
+            SSAOccurrenceSpec(
+                entity_ids["handoff_relation_destination"],
+                "reference",
+                "%handoff-destination",
+            ),
+            SSAOccurrenceSpec(entity_ids["barrier_survivor"], "reference", "%barrier"),
+            SSAOccurrenceSpec(
+                entity_ids["incomplete_relation_source"],
+                "reference",
+                "%incomplete-source",
+            ),
+        ),
+    )
+    f_before = _append_ssa_snapshot(
+        snapshots,
+        occurrences,
+        event_id=PIPELINE_EVENT_IDS["F"],
+        state="before",
+        root_entity_id=entity_ids["root"],
+        values=(
+            SSAOccurrenceSpec(
+                entity_ids["handoff_relation_destination"],
+                "reference",
+                "%handoff-destination",
+            ),
+            SSAOccurrenceSpec(entity_ids["barrier_survivor"], "reference", "%barrier"),
+            SSAOccurrenceSpec(
+                entity_ids["incomplete_relation_source"],
+                "reference",
+                "%incomplete-source",
+            ),
+        ),
+    )
+    g_before = _append_ssa_snapshot(
+        snapshots,
+        occurrences,
+        event_id=PIPELINE_EVENT_IDS["G"],
+        state="before",
+        root_entity_id=entity_ids["root"],
+        values=(
+            SSAOccurrenceSpec(entity_ids["barrier_survivor"], "reference", "%barrier"),
+            SSAOccurrenceSpec(
+                entity_ids["incomplete_relation_destination"],
+                "reference",
+                "%incomplete-destination",
+            ),
+        ),
+    )
+    g_after = _append_ssa_snapshot(
+        snapshots,
+        occurrences,
+        event_id=PIPELINE_EVENT_IDS["G"],
+        state="after",
+        root_entity_id=entity_ids["root"],
+        values=(
+            SSAOccurrenceSpec(entity_ids["barrier_survivor"], "reference", "%barrier"),
+            SSAOccurrenceSpec(
+                entity_ids["incomplete_relation_destination"],
+                "reference",
+                "%incomplete-destination",
+            ),
+        ),
+    )
+    d_child_before = _append_snapshot(
+        snapshots,
+        occurrences,
+        event_id=PIPELINE_EVENT_IDS["D_CHILD"],
+        state="before",
+        root_entity_id=entity_ids["root"],
+        text="D child before",
+        entity_ids=(entity_ids["root"],),
+    )
+    d_child_after = _append_snapshot(
+        snapshots,
+        occurrences,
+        event_id=PIPELINE_EVENT_IDS["D_CHILD"],
+        state="after",
+        root_entity_id=entity_ids["root"],
+        text="D child after",
+        entity_ids=(entity_ids["root"],),
+    )
+    bindings = (
+        ("A", None, 0, a_before, a_after),
+        ("B", None, 1, b_before, b_after),
+        ("C", None, 2, c_before, c_after),
+        ("D", PIPELINE_EVENT_IDS["C"], 0, d_before, d_after),
+        ("E", None, 3, e_before, e_after),
+        ("F", None, 4, f_before, None),
+        ("G", None, 5, g_before, g_after),
+        (
+            "D_CHILD",
+            PIPELINE_EVENT_IDS["D"],
+            0,
+            d_child_before,
+            d_child_after,
+        ),
+    )
+    events = tuple(
+        _fixture_event(
+            PIPELINE_EVENT_IDS[label],
+            sequence,
+            parent_id,
+            sibling_ordinal,
+            f"Pipeline{label}Rule",
+            entity_ids["root"],
+            before_snapshot_id,
+            after_snapshot_id,
+        )
+        for sequence, (
+            label,
+            parent_id,
+            sibling_ordinal,
+            before_snapshot_id,
+            after_snapshot_id,
+        ) in enumerate(bindings)
+    )
+    operation_specs = (
+        OperationSpec(
+            PIPELINE_EVENT_IDS["A"],
+            "SSAValue.replace_by",
+            "completed",
+            (entity_ids["left"],),
+            (entity_ids["middle_left"],),
+        ),
+        OperationSpec(
+            PIPELINE_EVENT_IDS["B"],
+            "SSAValue.replace_by",
+            "completed",
+            (entity_ids["middle_left"],),
+            (entity_ids["middle_right"],),
+        ),
+        OperationSpec(
+            PIPELINE_EVENT_IDS["C"],
+            "SSAValue.replace_by",
+            "completed",
+            (entity_ids["middle_right"],),
+            (entity_ids["right"],),
+        ),
+        OperationSpec(
+            PIPELINE_EVENT_IDS["D"],
+            "SSAValue.replace_by",
+            "completed",
+            (entity_ids["handoff_relation_source"],),
+            (entity_ids["handoff_relation_destination"],),
+        ),
+        OperationSpec(
+            PIPELINE_EVENT_IDS["E"],
+            "SSAValue.replace_by",
+            "completed",
+            (entity_ids["handoff_relation_source"],),
+            (entity_ids["handoff_relation_destination"],),
+        ),
+        OperationSpec(
+            PIPELINE_EVENT_IDS["D_CHILD"],
+            "SSAValue.replace_by",
+            "completed",
+            (entity_ids["handoff_relation_source"],),
+            (entity_ids["handoff_relation_destination"],),
+        ),
+        OperationSpec(
+            PIPELINE_EVENT_IDS["C"],
+            "SSAValue.replace_by",
+            "completed",
+            (entity_ids["handoff_relation_source"],),
+            (entity_ids["handoff_relation_destination"],),
+        ),
+        OperationSpec(
+            PIPELINE_EVENT_IDS["F"],
+            "SSAValue.replace_by",
+            "completed",
+            (entity_ids["incomplete_relation_source"],),
+            (entity_ids["incomplete_relation_destination"],),
+        ),
+    )
+    operations = tuple(
+        MutationOperation(
+            f"operation-{sequence}",
+            sequence,
+            specification.owner_event_id,
+            None,
+            specification.api,
+            specification.outcome,
+            specification.source_entity_ids,
+            specification.destination_entity_ids,
+            "stack-0",
+        )
+        for sequence, specification in enumerate(operation_specs)
+    )
+    relation_endpoints = (
+        ("left", "middle_left"),
+        ("middle_left", "middle_right"),
+        ("middle_right", "right"),
+        ("handoff_relation_source", "handoff_relation_destination"),
+        ("handoff_relation_source", "handoff_relation_destination"),
+        ("handoff_relation_source", "handoff_relation_destination"),
+        ("handoff_relation_source", "handoff_relation_destination"),
+        ("incomplete_relation_source", "incomplete_relation_destination"),
+    )
+    relations = tuple(
+        ProvenanceRelation(
+            f"relation-{sequence}",
+            "ssa_uses_retargeted_to",
+            entity_ids[source_label],
+            entity_ids[destination_label],
+            f"operation-{sequence}",
+        )
+        for sequence, (source_label, destination_label) in enumerate(relation_endpoints)
+    )
+    stack = InvocationStack(
+        "stack-0", (FrameLocation("pipeline_provenance.py", 17, "rewrite"),)
+    )
+    return Trace(
+        schema_version=1,
+        complete=False,
+        configurations=(configuration,),
+        styles=(style,),
+        entities=entities,
+        snapshots=tuple(snapshots),
+        occurrences=tuple(occurrences),
+        stacks=(stack,),
+        events=events,
+        operations=operations,
+        relations=relations,
+    )
+
+
 def _configuration() -> CaptureConfiguration:
     return CaptureConfiguration(
         "configuration-0",
@@ -451,6 +1475,124 @@ def _append_snapshot(
             (occurrence_id,),
             (),
             False,
+        )
+    )
+    return snapshot_id
+
+
+def _fixture_event(
+    event_id: str,
+    sequence: int,
+    parent_id: str | None,
+    sibling_ordinal: int,
+    rule_type: str,
+    root_entity_id: str,
+    before_snapshot_id: str,
+    after_snapshot_id: str | None,
+) -> RewriteEvent:
+    return RewriteEvent(
+        id=event_id,
+        sequence=sequence,
+        parent_id=parent_id,
+        sibling_ordinal=sibling_ordinal,
+        rule_type=rule_type,
+        completion="incomplete" if after_snapshot_id is None else "complete",
+        root_entity_id=root_entity_id,
+        before_snapshot_id=before_snapshot_id,
+        after_snapshot_id=after_snapshot_id,
+        invocation_stack_id="stack-0",
+        result=(
+            None
+            if after_snapshot_id is None
+            else RewriteResultRecord(False, True, False)
+        ),
+    )
+
+
+def _append_ssa_snapshot(
+    snapshots: list[Snapshot],
+    occurrences: list[EntityOccurrence],
+    *,
+    event_id: str,
+    state: str,
+    root_entity_id: str,
+    values: tuple[SSAOccurrenceSpec, ...],
+    container_entity_ids: tuple[str, ...] = (),
+    split_first_occurrence: bool = False,
+) -> str:
+    snapshot_id = f"snapshot-{len(snapshots)}"
+    text_parts: list[str] = []
+    value_intervals: list[tuple[SSAOccurrenceSpec, int, int]] = []
+    cursor = 0
+    for specification in values:
+        if text_parts:
+            text_parts.append(" ")
+            cursor += 1
+        start = cursor
+        text_parts.append(specification.text)
+        cursor += len(specification.text)
+        value_intervals.append((specification, start, cursor))
+    text = "".join(text_parts)
+
+    occurrence_ids: list[str] = []
+
+    def append_occurrence(entity_id: str, role: str, start: int, end: int) -> None:
+        occurrence_id = f"occurrence-{len(occurrences)}"
+        occurrences.append(
+            EntityOccurrence(
+                occurrence_id,
+                snapshot_id,
+                entity_id,
+                role,
+                start,
+                end,
+            )
+        )
+        occurrence_ids.append(occurrence_id)
+
+    append_occurrence(root_entity_id, "container", 0, len(text))
+    for entity_id in container_entity_ids:
+        append_occurrence(entity_id, "container", 0, len(text))
+    for specification, start, end in value_intervals:
+        append_occurrence(specification.entity_id, specification.role, start, end)
+
+    entity_ids = [root_entity_id]
+    for entity_id in container_entity_ids:
+        if entity_id not in entity_ids:
+            entity_ids.append(entity_id)
+    for specification in values:
+        if specification.entity_id not in entity_ids:
+            entity_ids.append(specification.entity_id)
+
+    style_spans: tuple[StyleSpan, ...]
+    if not text:
+        style_spans = ()
+    elif split_first_occurrence:
+        first_start, first_end = value_intervals[0][1:]
+        split = first_start + (first_end - first_start) // 2
+        if split <= 0 or split >= len(text):
+            raise ValueError("the split fixture requires text on both sides")
+        style_spans = (
+            StyleSpan(0, split, "style-0"),
+            StyleSpan(split, len(text), "style-1"),
+        )
+    else:
+        style_spans = (StyleSpan(0, len(text), "style-0"),)
+
+    snapshots.append(
+        Snapshot(
+            id=snapshot_id,
+            event_id=event_id,
+            state=state,
+            schema_version=1,
+            configuration_id="configuration-0",
+            root_entity_id=root_entity_id,
+            text=text,
+            style_spans=style_spans,
+            entity_ids=tuple(entity_ids),
+            occurrence_ids=tuple(occurrence_ids),
+            metadata_ids=(),
+            analysis_supplied=False,
         )
     )
     return snapshot_id

@@ -30,7 +30,12 @@ const stackById = new Map();
 const operationById = new Map();
 const operationsByEvent = new Map();
 const relationsByOperation = new Map();
+const relationsBySource = new Map();
+const relationsByDestination = new Map();
 const effectsByOperation = new Map();
+const occurrencesBySnapshotAndEntity = new Map();
+const occurrenceOrdinalById = new Map();
+const applicableRelationsByEvent = new Map();
 const projectedSnapshotById = new Map();
 const classesByStyle = new Map();
 const eventButtons = new Map();
@@ -45,11 +50,28 @@ for (const style of trace.styles) {
 for (const entity of trace.entities) {
   entityById.set(entity.id, entity);
 }
-for (const snapshot of trace.snapshots) {
-  snapshotById.set(snapshot.id, snapshot);
-}
 for (const occurrence of trace.occurrences) {
   occurrenceById.set(occurrence.id, occurrence);
+}
+for (const snapshot of trace.snapshots) {
+  snapshotById.set(snapshot.id, snapshot);
+  const byEntity = new Map();
+  for (
+    let occurrenceOrdinal = 0;
+    occurrenceOrdinal < snapshot.occurrence_ids.length;
+    occurrenceOrdinal += 1
+  ) {
+    const occurrenceId = snapshot.occurrence_ids[occurrenceOrdinal];
+    const occurrence = occurrenceById.get(occurrenceId);
+    if (occurrence === undefined) {
+      throw new Error(`missing canonical occurrence: ${occurrenceId}`);
+    }
+    occurrenceOrdinalById.set(occurrence.id, occurrenceOrdinal);
+    const entityOccurrences = byEntity.get(occurrence.entity_id) || [];
+    entityOccurrences.push(occurrence);
+    byEntity.set(occurrence.entity_id, entityOccurrences);
+  }
+  occurrencesBySnapshotAndEntity.set(snapshot.id, byEntity);
 }
 for (const record of trace.metadata) {
   metadataById.set(record.id, record);
@@ -82,6 +104,13 @@ for (const relation of trace.relations) {
     relationsByOperation.get(relation.mutation_operation_id) || [];
   owned.push(relation);
   relationsByOperation.set(relation.mutation_operation_id, owned);
+  const outgoing = relationsBySource.get(relation.source_entity_id) || [];
+  outgoing.push(relation);
+  relationsBySource.set(relation.source_entity_id, outgoing);
+  const incoming =
+    relationsByDestination.get(relation.destination_entity_id) || [];
+  incoming.push(relation);
+  relationsByDestination.set(relation.destination_entity_id, incoming);
 }
 for (const effect of trace.effects) {
   const owned = effectsByOperation.get(effect.mutation_operation_id) || [];
@@ -115,6 +144,56 @@ function isStrictDescendant(candidateId, ancestorId) {
     parentId = parentByEvent.get(parentId);
   }
   return false;
+}
+
+function interactiveOccurrences(snapshotId, entityId) {
+  const byEntity = occurrencesBySnapshotAndEntity.get(snapshotId);
+  return (byEntity?.get(entityId) || []).filter(
+    (occurrence) =>
+      occurrence.role === "definition" || occurrence.role === "reference",
+  );
+}
+
+function appendApplicableRelation(eventId, relation) {
+  const applicable = applicableRelationsByEvent.get(eventId) || [];
+  applicable.push(relation);
+  applicableRelationsByEvent.set(eventId, applicable);
+}
+
+for (const relation of trace.relations) {
+  const source = entityById.get(relation.source_entity_id);
+  const destination = entityById.get(relation.destination_entity_id);
+  if (source?.kind !== "ssa" || destination?.kind !== "ssa") {
+    continue;
+  }
+  const operation = operationById.get(relation.mutation_operation_id);
+  if (operation === undefined) {
+    throw new Error(
+      `missing canonical mutation operation: ${relation.mutation_operation_id}`,
+    );
+  }
+
+  let candidateEventId = operation.owner_event_id;
+  while (candidateEventId !== null && candidateEventId !== undefined) {
+    const candidateEvent = eventById.get(candidateEventId);
+    if (candidateEvent === undefined) {
+      throw new Error(`missing canonical event: ${candidateEventId}`);
+    }
+    if (
+      candidateEvent.after_snapshot_id !== null &&
+      interactiveOccurrences(
+        candidateEvent.before_snapshot_id,
+        relation.source_entity_id,
+      ).length > 0 &&
+      interactiveOccurrences(
+        candidateEvent.after_snapshot_id,
+        relation.destination_entity_id,
+      ).length > 0
+    ) {
+      appendApplicableRelation(candidateEvent.id, relation);
+    }
+    candidateEventId = parentByEvent.get(candidateEventId);
+  }
 }
 
 function orderedUnique(eventIds) {
@@ -300,6 +379,45 @@ function reduceColumns(frontier) {
   return Object.freeze(reduced);
 }
 
+function reduceAdjacentEdge(leftColumn, rightColumn) {
+  const leftRole = leftColumn.roles[leftColumn.roles.length - 1];
+  const rightRole = rightColumn.roles[0];
+  if (leftRole.kind === "absent" || rightRole.kind === "absent") {
+    return Object.freeze({
+      kind: "barrier",
+      eventId: null,
+      leftRole,
+      rightRole,
+    });
+  }
+  if (
+    leftRole.eventId === rightRole.eventId &&
+    leftRole.state === "before" &&
+    rightRole.state === "after"
+  ) {
+    return Object.freeze({
+      kind: "event",
+      eventId: leftRole.eventId,
+      leftRole,
+      rightRole,
+    });
+  }
+  if (leftRole.state === "after" && rightRole.state === "before") {
+    return Object.freeze({
+      kind: "handoff",
+      eventId: null,
+      leftRole,
+      rightRole,
+    });
+  }
+  return Object.freeze({
+    kind: "disconnected",
+    eventId: null,
+    leftRole,
+    rightRole,
+  });
+}
+
 function appendEventBranch(parentId, list, depth) {
   for (const event of childrenByParent.get(parentId) || []) {
     const item = document.createElement("li");
@@ -326,21 +444,127 @@ function appendEventBranch(parentId, list, depth) {
   }
 }
 
-function renderCode(snapshotId) {
-  const projected = projectedSnapshotById.get(snapshotId);
+function renderRun(run) {
+  const span = document.createElement("span");
+  span.textContent = run.text;
+  if (run.occurrence_ids.length > 0) {
+    span.dataset.occurrenceIds = run.occurrence_ids.join(" ");
+  }
+  const styleClass = classesByStyle.get(run.style_id);
+  if (styleClass !== undefined) {
+    span.classList.add(styleClass);
+  }
+  return span;
+}
+
+function interactiveOccurrenceForRun(run) {
+  const interactive = run.occurrence_ids
+    .map((occurrenceId) => occurrenceById.get(occurrenceId))
+    .filter(
+      (occurrence) =>
+        occurrence.role === "definition" || occurrence.role === "reference",
+    );
+  if (interactive.length > 1) {
+    throw new Error("a render run cannot contain overlapping SSA occurrences");
+  }
+  return interactive.length === 0 ? null : interactive[0];
+}
+
+function occurrenceBindings(column, presentationOccurrence) {
+  const ordinal = occurrenceOrdinalById.get(presentationOccurrence.id);
+  if (ordinal === undefined) {
+    throw new Error(
+      `missing retained occurrence ordinal: ${presentationOccurrence.id}`,
+    );
+  }
+  const bindings = [];
+  for (const role of column.roles) {
+    if (role.kind !== "snapshot") {
+      throw new Error("an absent column cannot contain a rendered occurrence");
+    }
+    const snapshot = snapshotById.get(role.snapshotId);
+    const occurrenceId = snapshot.occurrence_ids[ordinal];
+    const occurrence = occurrenceById.get(occurrenceId);
+    if (
+      occurrence === undefined ||
+      occurrence.entity_id !== presentationOccurrence.entity_id ||
+      occurrence.role !== presentationOccurrence.role ||
+      occurrence.start !== presentationOccurrence.start ||
+      occurrence.end !== presentationOccurrence.end
+    ) {
+      throw new Error("shared snapshot occurrence order is inconsistent");
+    }
+    bindings.push(
+      Object.freeze({
+        role,
+        roleName: roleName(role),
+        occurrence,
+      }),
+    );
+  }
+  return Object.freeze(bindings);
+}
+
+function appendOccurrenceRecord(columnState, element, bindings) {
+  const presentationOccurrence = bindings[0].occurrence;
+  element.className = "ssa-occurrence";
+  element.dataset.columnIndex = String(columnState.index);
+  element.dataset.entityId = presentationOccurrence.entity_id;
+  element.dataset.occurrenceId = presentationOccurrence.id;
+  element.dataset.occurrenceIds = bindings
+    .map((binding) => binding.occurrence.id)
+    .join(" ");
+  element.dataset.occurrenceRole = presentationOccurrence.role;
+  element.dataset.roleOccurrenceIds = bindings
+    .map((binding) => `${binding.roleName}=${binding.occurrence.id}`)
+    .join("|");
+
+  const record = Object.freeze({
+    element,
+    columnIndex: columnState.index,
+    entityId: presentationOccurrence.entity_id,
+    bindings,
+  });
+  const byEntity =
+    columnState.occurrencesByEntity.get(record.entityId) || [];
+  byEntity.push(record);
+  columnState.occurrencesByEntity.set(record.entityId, byEntity);
+  columnState.occurrences.push(record);
+  element.addEventListener("pointerenter", () => {
+    previewProvenance(record);
+  });
+  element.addEventListener("pointerleave", () => {
+    endPointerProvenance(record);
+  });
+  return record;
+}
+
+function renderCode(column, columnState) {
+  const [presentationRole] = column.roles;
+  const projected = projectedSnapshotById.get(presentationRole.snapshotId);
   const code = document.createElement("code");
   code.className = "trace-code";
+  let activeOccurrenceId = null;
+  let activeWrapper = null;
   for (const run of projected.render_runs) {
-    const span = document.createElement("span");
-    span.textContent = run.text;
-    if (run.occurrence_ids.length > 0) {
-      span.dataset.occurrenceIds = run.occurrence_ids.join(" ");
+    const interactiveOccurrence = interactiveOccurrenceForRun(run);
+    if (interactiveOccurrence === null) {
+      activeOccurrenceId = null;
+      activeWrapper = null;
+      code.append(renderRun(run));
+      continue;
     }
-    const styleClass = classesByStyle.get(run.style_id);
-    if (styleClass !== undefined) {
-      span.classList.add(styleClass);
+    if (activeOccurrenceId !== interactiveOccurrence.id) {
+      activeOccurrenceId = interactiveOccurrence.id;
+      activeWrapper = document.createElement("span");
+      appendOccurrenceRecord(
+        columnState,
+        activeWrapper,
+        occurrenceBindings(column, interactiveOccurrence),
+      );
+      code.append(activeWrapper);
     }
-    code.append(span);
+    activeWrapper.append(renderRun(run));
   }
   return code;
 }
@@ -356,8 +580,15 @@ function columnHeading(column) {
   return roleName(role);
 }
 
-function renderColumn(column) {
+function renderColumn(column, index) {
   const section = document.createElement("section");
+  const columnState = {
+    column,
+    element: section,
+    index,
+    occurrences: [],
+    occurrencesByEntity: new Map(),
+  };
   section.className = "state-column";
   section.dataset.columnKey = column.key;
   section.dataset.roleCount = String(column.roles.length);
@@ -380,9 +611,124 @@ function renderColumn(column) {
     message.textContent = "Absent after state; the event is incomplete.";
     section.append(message);
   } else {
-    section.append(renderCode(presentationRole.snapshotId));
+    section.append(renderCode(column, columnState));
   }
-  return section;
+  return columnState;
+}
+
+let renderedColumnState = Object.freeze([]);
+let renderedEdgeState = Object.freeze([]);
+let activePointerOccurrence = null;
+const provenanceTargets = new Set();
+
+function clearProvenancePreview() {
+  activePointerOccurrence = null;
+  for (const target of provenanceTargets) {
+    delete target.dataset.provenanceRelated;
+    delete target.dataset.provenanceIdentity;
+    delete target.dataset.provenanceRelationIds;
+  }
+  provenanceTargets.clear();
+}
+
+function bindingForRole(record, role) {
+  const expectedRoleName = roleName(role);
+  return record.bindings.find(
+    (binding) => binding.roleName === expectedRoleName,
+  );
+}
+
+function relationEvidence(edge, sourceEntityId, targetEntityId, sourceIsLeft) {
+  if (edge.kind !== "event") {
+    return [];
+  }
+  const applicable = applicableRelationsByEvent.get(edge.eventId) || [];
+  const endpointRelations = sourceIsLeft
+    ? relationsBySource.get(sourceEntityId) || []
+    : relationsByDestination.get(sourceEntityId) || [];
+  return endpointRelations.filter(
+    (relation) =>
+      applicable.includes(relation) &&
+      (sourceIsLeft
+        ? relation.destination_entity_id === targetEntityId
+        : relation.source_entity_id === targetEntityId),
+  );
+}
+
+function markProvenanceTarget(target, identity, relations) {
+  target.dataset.provenanceRelated = "true";
+  target.dataset.provenanceIdentity = identity ? "true" : "false";
+  target.dataset.provenanceRelationIds = relations
+    .map((relation) => relation.id)
+    .join(" ");
+  provenanceTargets.add(target);
+}
+
+function previewNeighbor(sourceRecord, neighborIndex, edge, sourceIsLeft) {
+  if (edge.kind === "barrier" || edge.kind === "disconnected") {
+    return;
+  }
+  const sourceRole = sourceIsLeft ? edge.leftRole : edge.rightRole;
+  const targetRole = sourceIsLeft ? edge.rightRole : edge.leftRole;
+  const sourceBinding = bindingForRole(sourceRecord, sourceRole);
+  if (sourceBinding === undefined) {
+    throw new Error("rendered source lacks its facing logical occurrence");
+  }
+
+  const neighbor = renderedColumnState[neighborIndex];
+  for (const targetRecord of neighbor.occurrences) {
+    const targetBinding = bindingForRole(targetRecord, targetRole);
+    if (targetBinding === undefined) {
+      throw new Error("rendered target lacks its facing logical occurrence");
+    }
+    const identity =
+      sourceBinding.occurrence.entity_id ===
+      targetBinding.occurrence.entity_id;
+    const relations = relationEvidence(
+      edge,
+      sourceBinding.occurrence.entity_id,
+      targetBinding.occurrence.entity_id,
+      sourceIsLeft,
+    );
+    if (identity || relations.length > 0) {
+      markProvenanceTarget(targetRecord.element, identity, relations);
+    }
+  }
+}
+
+function previewProvenance(sourceRecord) {
+  const currentColumn = renderedColumnState[sourceRecord.columnIndex];
+  if (
+    !sourceRecord.element.isConnected ||
+    currentColumn === undefined ||
+    !currentColumn.occurrences.includes(sourceRecord)
+  ) {
+    return;
+  }
+  clearProvenancePreview();
+  activePointerOccurrence = sourceRecord;
+  if (sourceRecord.columnIndex > 0) {
+    previewNeighbor(
+      sourceRecord,
+      sourceRecord.columnIndex - 1,
+      renderedEdgeState[sourceRecord.columnIndex - 1],
+      false,
+    );
+  }
+  if (sourceRecord.columnIndex + 1 < renderedColumnState.length) {
+    previewNeighbor(
+      sourceRecord,
+      sourceRecord.columnIndex + 1,
+      renderedEdgeState[sourceRecord.columnIndex],
+      true,
+    );
+  }
+}
+
+function endPointerProvenance(sourceRecord) {
+  if (activePointerOccurrence === sourceRecord) {
+    clearProvenancePreview();
+  }
 }
 
 function addIdentifier(target, identifier) {
@@ -538,6 +884,7 @@ function renderFacts(state) {
 }
 
 function renderSelection(state) {
+  clearProvenancePreview();
   const visible = new Set(visibleEventIds(state));
   let hiddenCount = 0;
   for (const eventId of eventPreorder) {
@@ -562,8 +909,19 @@ function renderSelection(state) {
   eventTree.dataset.frontier = state.frontier.join(" ");
   eventTree.dataset.anchor = state.anchor === null ? "" : state.anchor;
 
+  const reducedColumns = reduceColumns(state.frontier);
+  renderedColumnState = Object.freeze(
+    reducedColumns.map((column, index) => renderColumn(column, index)),
+  );
+  renderedEdgeState = Object.freeze(
+    reducedColumns
+      .slice(0, -1)
+      .map((column, index) =>
+        reduceAdjacentEdge(column, reducedColumns[index + 1]),
+      ),
+  );
   columns.replaceChildren(
-    ...reduceColumns(state.frontier).map((column) => renderColumn(column)),
+    ...renderedColumnState.map((columnState) => columnState.element),
   );
   emptyWorkspace.hidden = state.frontier.length !== 0;
   renderFacts(state);
