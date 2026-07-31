@@ -36,10 +36,12 @@ const effectsByOperation = new Map();
 const occurrencesBySnapshotAndEntity = new Map();
 const occurrenceOrdinalById = new Map();
 const applicableRelationsByEvent = new Map();
+const metadataInventoryBySnapshotAndEntity = new Map();
 const projectedSnapshotById = new Map();
 const classesByStyle = new Map();
 const eventButtons = new Map();
 const eventRows = new Map();
+const occurrenceRecordByElement = new WeakMap();
 
 for (const configuration of trace.configurations) {
   configurationById.set(configuration.id, configuration);
@@ -505,8 +507,114 @@ function occurrenceBindings(column, presentationOccurrence) {
   return Object.freeze(bindings);
 }
 
+function snapshotEntityKey(snapshotId, entityId) {
+  return JSON.stringify([snapshotId, entityId]);
+}
+
+function renderedValueSignature(value) {
+  if (value === null) {
+    return null;
+  }
+  return [value.qualified_type, value.text, value.path];
+}
+
+function metadataInventory(snapshotId, entityId) {
+  const cacheKey = snapshotEntityKey(snapshotId, entityId);
+  const cached = metadataInventoryBySnapshotAndEntity.get(cacheKey);
+  if (cached !== undefined) {
+    return cached;
+  }
+
+  const snapshot = snapshotById.get(snapshotId);
+  const entity = entityById.get(entityId);
+  if (snapshot === undefined || entity === undefined || entity.kind !== "ssa") {
+    throw new Error("an SSA metadata inventory requires retained snapshot and entity");
+  }
+  const records = [];
+  for (const metadataId of snapshot.metadata_ids) {
+    const record = metadataById.get(metadataId);
+    if (record === undefined || record.snapshot_id !== snapshot.id) {
+      throw new Error(`missing canonical metadata record: ${metadataId}`);
+    }
+    if (record.owner_entity_id === entity.id) {
+      records.push(record);
+    }
+  }
+  const frozenRecords = Object.freeze(records);
+  const signature = JSON.stringify([
+    entity.id,
+    entity.qualified_type,
+    entity.defining_owner_id,
+    snapshot.analysis_supplied,
+    frozenRecords.map((record) => [
+      record.owner_entity_id,
+      record.namespace,
+      record.key,
+      record.presence,
+      renderedValueSignature(record.value),
+    ]),
+  ]);
+  const typeRecords = frozenRecords.filter(
+    (record) =>
+      record.namespace === "ssa" &&
+      record.key === "type" &&
+      record.presence === "present" &&
+      record.value !== null,
+  );
+  const inventory = Object.freeze({
+    snapshot,
+    entity,
+    records: frozenRecords,
+    signature,
+    typeRecord: typeRecords.length === 1 ? typeRecords[0] : null,
+  });
+  metadataInventoryBySnapshotAndEntity.set(cacheKey, inventory);
+  return inventory;
+}
+
+function occurrenceMetadata(bindings, entityId) {
+  const inventories = Object.freeze(
+    bindings.map((binding) => {
+      if (binding.occurrence.snapshot_id !== binding.role.snapshotId) {
+        throw new Error("logical occurrence binding has the wrong snapshot");
+      }
+      return metadataInventory(binding.role.snapshotId, entityId);
+    }),
+  );
+  const signature = inventories[0].signature;
+  if (!inventories.every((inventory) => inventory.signature === signature)) {
+    throw new Error("shared occurrence metadata inventories are inconsistent");
+  }
+  return inventories;
+}
+
+function definitionSuffix(presentationOccurrence, inventories) {
+  if (presentationOccurrence.role !== "definition") {
+    return null;
+  }
+  const typeRecords = inventories.map((inventory) => inventory.typeRecord);
+  if (
+    typeRecords[0] === null ||
+    !typeRecords.every(
+      (record) =>
+        record !== null && record.value.text === typeRecords[0].value.text,
+    )
+  ) {
+    return null;
+  }
+  const suffix = document.createElement("span");
+  suffix.className = "ssa-metadata-suffix";
+  suffix.textContent = ` ⟦${typeRecords[0].value.text}⟧`;
+  return suffix;
+}
+
 function appendOccurrenceRecord(columnState, element, bindings) {
   const presentationOccurrence = bindings[0].occurrence;
+  const inventories = occurrenceMetadata(
+    bindings,
+    presentationOccurrence.entity_id,
+  );
+  const suffixElement = definitionSuffix(presentationOccurrence, inventories);
   element.className = "ssa-occurrence";
   element.dataset.columnIndex = String(columnState.index);
   element.dataset.entityId = presentationOccurrence.entity_id;
@@ -522,9 +630,13 @@ function appendOccurrenceRecord(columnState, element, bindings) {
   const record = Object.freeze({
     element,
     columnIndex: columnState.index,
+    columnKey: columnState.column.key,
     entityId: presentationOccurrence.entity_id,
     bindings,
+    inventories,
+    suffixElement,
   });
+  occurrenceRecordByElement.set(element, record);
   const byEntity =
     columnState.occurrencesByEntity.get(record.entityId) || [];
   byEntity.push(record);
@@ -557,12 +669,15 @@ function renderCode(column, columnState) {
     if (activeOccurrenceId !== interactiveOccurrence.id) {
       activeOccurrenceId = interactiveOccurrence.id;
       activeWrapper = document.createElement("span");
-      appendOccurrenceRecord(
+      const record = appendOccurrenceRecord(
         columnState,
         activeWrapper,
         occurrenceBindings(column, interactiveOccurrence),
       );
       code.append(activeWrapper);
+      if (record.suffixElement !== null) {
+        code.append(record.suffixElement);
+      }
     }
     activeWrapper.append(renderRun(run));
   }
@@ -620,6 +735,18 @@ let renderedColumnState = Object.freeze([]);
 let renderedEdgeState = Object.freeze([]);
 let activePointerOccurrence = null;
 const provenanceTargets = new Set();
+let activeMetadataOccurrence = null;
+let activeMetadataOverlay = null;
+
+function currentOccurrenceRecord(record) {
+  const currentColumn = renderedColumnState[record.columnIndex];
+  return (
+    record.element.isConnected &&
+    currentColumn !== undefined &&
+    currentColumn.column.key === record.columnKey &&
+    currentColumn.occurrences.includes(record)
+  );
+}
 
 function clearProvenancePreview() {
   activePointerOccurrence = null;
@@ -697,12 +824,7 @@ function previewNeighbor(sourceRecord, neighborIndex, edge, sourceIsLeft) {
 }
 
 function previewProvenance(sourceRecord) {
-  const currentColumn = renderedColumnState[sourceRecord.columnIndex];
-  if (
-    !sourceRecord.element.isConnected ||
-    currentColumn === undefined ||
-    !currentColumn.occurrences.includes(sourceRecord)
-  ) {
+  if (!currentOccurrenceRecord(sourceRecord)) {
     return;
   }
   clearProvenancePreview();
@@ -728,6 +850,311 @@ function previewProvenance(sourceRecord) {
 function endPointerProvenance(sourceRecord) {
   if (activePointerOccurrence === sourceRecord) {
     clearProvenancePreview();
+  }
+}
+
+function reduceMetadataOccurrence(current, input) {
+  if (input.kind === "activate") {
+    if (
+      current !== null &&
+      current.record === input.candidate.record &&
+      current.columnKey === input.candidate.columnKey
+    ) {
+      return null;
+    }
+    return input.candidate;
+  }
+  if (input.kind === "dismiss") {
+    return null;
+  }
+  return current;
+}
+
+function appendMetadataField(list, field, label, value, exact = false) {
+  const row = document.createElement("div");
+  row.className = "ssa-metadata-field";
+  row.dataset.field = field;
+  const term = document.createElement("dt");
+  term.textContent = label;
+  const definition = document.createElement("dd");
+  if (exact) {
+    const exactValue = document.createElement("span");
+    exactValue.className = "ssa-metadata-exact-value";
+    exactValue.textContent = value;
+    definition.append(exactValue);
+  } else {
+    definition.textContent = value;
+  }
+  row.append(term, definition);
+  list.append(row);
+}
+
+function appendRenderedMetadataValue(container, value) {
+  const fields = document.createElement("dl");
+  fields.className = "ssa-metadata-value";
+  appendMetadataField(
+    fields,
+    "qualified-type",
+    "Qualified type",
+    value.qualified_type,
+  );
+  appendMetadataField(fields, "text", "Exact text", value.text, true);
+  appendMetadataField(fields, "path", "Representation path", value.path);
+  container.append(fields);
+}
+
+function renderMetadataRecord(record, ordinal) {
+  const item = document.createElement("section");
+  item.className = "ssa-metadata-record";
+  item.dataset.recordOrdinal = String(ordinal);
+  const heading = document.createElement("h5");
+  heading.textContent = `Metadata entry ${ordinal + 1}`;
+  const fields = document.createElement("dl");
+  fields.className = "ssa-metadata-record-fields";
+  appendMetadataField(fields, "namespace", "Namespace", record.namespace, true);
+  appendMetadataField(fields, "key", "Key", record.key, true);
+  appendMetadataField(fields, "presence", "Presence", record.presence);
+  item.append(heading, fields);
+
+  const valueHeading = document.createElement("h6");
+  valueHeading.textContent = "Retained representation";
+  item.append(valueHeading);
+  if (record.value === null) {
+    const absent = document.createElement("p");
+    absent.className = "ssa-metadata-absent";
+    absent.textContent = "Absent";
+    item.append(absent);
+  } else {
+    appendRenderedMetadataValue(item, record.value);
+  }
+  return item;
+}
+
+function renderMetadataOverlay(candidate) {
+  const overlay = document.createElement("section");
+  overlay.id = "ssa-metadata-overlay";
+  overlay.className = "ssa-metadata-overlay";
+  overlay.dataset.anchorOccurrenceIds = candidate.record.bindings
+    .map((binding) => binding.occurrence.id)
+    .join(" ");
+  overlay.dataset.columnKey = candidate.columnKey;
+  overlay.dataset.measuring = "true";
+
+  const heading = document.createElement("h3");
+  heading.textContent = "SSA metadata";
+  overlay.append(heading);
+
+  const bindingHeading = document.createElement("h4");
+  bindingHeading.textContent = "Logical bindings";
+  const bindings = document.createElement("dl");
+  bindings.className = "ssa-metadata-bindings";
+  for (const [ordinal, binding] of candidate.record.bindings.entries()) {
+    const group = document.createElement("div");
+    group.className = "ssa-metadata-binding";
+    group.dataset.bindingOrdinal = String(ordinal);
+    appendMetadataField(group, "role", "State role", binding.roleName);
+    appendMetadataField(
+      group,
+      "snapshot-id",
+      "Snapshot ID",
+      binding.occurrence.snapshot_id,
+    );
+    appendMetadataField(
+      group,
+      "occurrence-id",
+      "Occurrence ID",
+      binding.occurrence.id,
+    );
+    bindings.append(group);
+  }
+  overlay.append(bindingHeading, bindings);
+
+  const inventory = candidate.record.inventories[0];
+  const inventorySection = document.createElement("section");
+  inventorySection.className = "ssa-metadata-inventory";
+  inventorySection.dataset.entityId = inventory.entity.id;
+  const inventoryHeading = document.createElement("h4");
+  inventoryHeading.textContent = "Snapshot-owned inventory";
+  const identity = document.createElement("dl");
+  identity.className = "ssa-metadata-identity";
+  appendMetadataField(
+    identity,
+    "entity-id",
+    "SSA entity ID",
+    inventory.entity.id,
+  );
+  appendMetadataField(
+    identity,
+    "defining-owner-id",
+    "Defining owner ID",
+    inventory.entity.defining_owner_id === null
+      ? "Absent"
+      : inventory.entity.defining_owner_id,
+  );
+  inventorySection.append(inventoryHeading, identity);
+  for (const [ordinal, record] of inventory.records.entries()) {
+    inventorySection.append(renderMetadataRecord(record, ordinal));
+  }
+  overlay.append(inventorySection);
+  return overlay;
+}
+
+function finitePixelValue(value) {
+  if (!Number.isFinite(value)) {
+    throw new Error("overlay geometry is not finite");
+  }
+  const rounded = Math.round(value * 1000) / 1000;
+  return `${Object.is(rounded, -0) ? 0 : rounded}px`;
+}
+
+function placeMetadataOverlay(overlay, anchor) {
+  const inlineMargin = 8;
+  const gap = 8;
+  overlay.style.setProperty("--overlay-inline-start", "0px");
+  overlay.style.setProperty("--overlay-block-start", "0px");
+  document.body.append(overlay);
+
+  const viewportWidth = document.documentElement.clientWidth;
+  const viewportHeight = document.documentElement.clientHeight;
+  const anchorBox = anchor.getBoundingClientRect();
+  const overlayBox = overlay.getBoundingClientRect();
+  const dimensions = [
+    viewportWidth,
+    viewportHeight,
+    anchorBox.top,
+    anchorBox.right,
+    anchorBox.bottom,
+    anchorBox.left,
+    overlayBox.width,
+    overlayBox.height,
+  ];
+  if (!dimensions.every(Number.isFinite)) {
+    overlay.remove();
+    return false;
+  }
+
+  const above = anchorBox.top - gap - overlayBox.height;
+  const blockStart =
+    above >= 0 ? above : anchorBox.bottom + gap;
+  const maximumInlineStart =
+    viewportWidth - inlineMargin - overlayBox.width;
+  const inlineStart = Math.min(
+    Math.max(anchorBox.left, inlineMargin),
+    Math.max(inlineMargin, maximumInlineStart),
+  );
+  if (
+    blockStart < 0 ||
+    blockStart + overlayBox.height > viewportHeight ||
+    inlineStart < inlineMargin ||
+    inlineStart + overlayBox.width > viewportWidth - inlineMargin
+  ) {
+    overlay.remove();
+    return false;
+  }
+
+  overlay.style.setProperty(
+    "--overlay-inline-start",
+    finitePixelValue(inlineStart),
+  );
+  overlay.style.setProperty(
+    "--overlay-block-start",
+    finitePixelValue(blockStart),
+  );
+  delete overlay.dataset.measuring;
+  return true;
+}
+
+function closeMetadataOverlay() {
+  if (activeMetadataOccurrence !== null) {
+    delete activeMetadataOccurrence.record.element.dataset.metadataActive;
+  }
+  if (activeMetadataOverlay !== null) {
+    activeMetadataOverlay.remove();
+  }
+  activeMetadataOccurrence = null;
+  activeMetadataOverlay = null;
+}
+
+function commitMetadataOccurrence(next) {
+  if (next === activeMetadataOccurrence) {
+    return;
+  }
+  closeMetadataOverlay();
+  if (next === null || !currentOccurrenceRecord(next.record)) {
+    return;
+  }
+  const overlay = renderMetadataOverlay(next);
+  if (!placeMetadataOverlay(overlay, next.record.element)) {
+    return;
+  }
+  next.record.element.dataset.metadataActive = "true";
+  activeMetadataOccurrence = next;
+  activeMetadataOverlay = overlay;
+}
+
+function metadataCandidate(record) {
+  return Object.freeze({
+    record,
+    columnKey: record.columnKey,
+  });
+}
+
+function activateMetadataOccurrence(record) {
+  if (!currentOccurrenceRecord(record)) {
+    return;
+  }
+  commitMetadataOccurrence(
+    reduceMetadataOccurrence(activeMetadataOccurrence, {
+      kind: "activate",
+      candidate: metadataCandidate(record),
+    }),
+  );
+}
+
+function dismissMetadataOccurrence() {
+  commitMetadataOccurrence(
+    reduceMetadataOccurrence(activeMetadataOccurrence, {kind: "dismiss"}),
+  );
+}
+
+function handleMetadataClick(inputEvent) {
+  const target = inputEvent.target;
+  if (!(target instanceof Element)) {
+    dismissMetadataOccurrence();
+    return;
+  }
+  const occurrenceElement = target.closest(".ssa-occurrence");
+  if (occurrenceElement !== null) {
+    const record = occurrenceRecordByElement.get(occurrenceElement);
+    if (record !== undefined && currentOccurrenceRecord(record)) {
+      activateMetadataOccurrence(record);
+      return;
+    }
+  }
+  if (
+    activeMetadataOverlay !== null &&
+    activeMetadataOverlay.contains(target)
+  ) {
+    return;
+  }
+  dismissMetadataOccurrence();
+}
+
+function handleMetadataScroll(inputEvent) {
+  const target = inputEvent.target;
+  if (
+    activeMetadataOverlay !== null &&
+    target instanceof Node &&
+    activeMetadataOverlay.contains(target)
+  ) {
+    return;
+  }
+  dismissMetadataOccurrence();
+}
+
+function handleMetadataKey(inputEvent) {
+  if (inputEvent.key === "Escape") {
+    dismissMetadataOccurrence();
   }
 }
 
@@ -884,6 +1311,7 @@ function renderFacts(state) {
 }
 
 function renderSelection(state) {
+  dismissMetadataOccurrence();
   clearProvenancePreview();
   const visible = new Set(visibleEventIds(state));
   let hiddenCount = 0;
@@ -979,5 +1407,16 @@ function clearCurrentSelection() {
 
 appendEventBranch(null, eventTree, 0);
 clearSelection.addEventListener("click", clearCurrentSelection);
+document.addEventListener("click", handleMetadataClick, true);
+document.addEventListener("keydown", handleMetadataKey);
+document.addEventListener("scroll", handleMetadataScroll, true);
+window.addEventListener("resize", dismissMetadataOccurrence);
+if (
+  window.visualViewport !== null &&
+  window.visualViewport !== undefined
+) {
+  window.visualViewport.addEventListener("resize", dismissMetadataOccurrence);
+  window.visualViewport.addEventListener("scroll", dismissMetadataOccurrence);
+}
 renderSelection(selectionState);
 document.documentElement.setAttribute("data-krt-ready", "true");

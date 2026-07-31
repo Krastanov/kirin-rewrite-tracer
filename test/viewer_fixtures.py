@@ -146,6 +146,26 @@ PIPELINE_RELATION_IDS = {
     "incomplete_event_must_not_cross": "relation-7",
 }
 
+METADATA_EVENT_IDS = {"A": "event-0", "B": "event-1"}
+METADATA_ENTITY_IDS = {
+    "root": "entity-0",
+    "survivor": "entity-1",
+    "unnamed": "entity-2",
+    "block_argument": "entity-3",
+    "pair_left": "entity-4",
+    "pair_right": "entity-5",
+    "external_owner": "entity-6",
+    "external": "entity-7",
+    "similar_owner": "entity-8",
+    "similar": "entity-9",
+}
+METADATA_HOSTILE = (
+    '</ScRiPt><img src=x onerror="globalThis.metadataPwned=1">'
+    "& __proto__ https://metadata.invalid/\N{GRINNING FACE}"
+)
+METADATA_LONG_TEXT = "long-" + ("0123456789" * 90)
+METADATA_MULTILINE_TEXT = "first line\nsecond line\nthird line"
+
 
 @dataclass(frozen=True, slots=True)
 class EventSpec:
@@ -160,6 +180,15 @@ class SSAOccurrenceSpec:
     entity_id: str
     role: str
     text: str
+
+
+@dataclass(frozen=True, slots=True)
+class MetadataSpec:
+    entity_id: str
+    namespace: str
+    key: str
+    presence: str
+    value: RenderedValue | None
 
 
 @dataclass(frozen=True, slots=True)
@@ -512,6 +541,410 @@ def facts_trace() -> Trace:
         relations=(relation,),
         effects=effects,
     )
+
+
+def metadata_trace() -> Trace:
+    entity_ids = METADATA_ENTITY_IDS
+    configuration = _configuration()
+    styles = (StyleRecord("style-0"), StyleRecord("style-1", bold=True))
+    entities = (
+        TraceEntity(entity_ids["root"], "statement", "fixture.MetadataRoot"),
+        TraceEntity(
+            entity_ids["survivor"],
+            "ssa",
+            "fixture.SurvivorValue",
+            entity_ids["root"],
+        ),
+        TraceEntity(
+            entity_ids["unnamed"],
+            "ssa",
+            "fixture.UnnamedValue",
+            entity_ids["root"],
+        ),
+        TraceEntity(
+            entity_ids["block_argument"],
+            "ssa",
+            "fixture.BlockArgument",
+            entity_ids["root"],
+        ),
+        TraceEntity(
+            entity_ids["pair_left"],
+            "ssa",
+            "fixture.PairValueLeft",
+            entity_ids["root"],
+        ),
+        TraceEntity(
+            entity_ids["pair_right"],
+            "ssa",
+            "fixture.PairValueRight",
+            entity_ids["root"],
+        ),
+        TraceEntity(
+            entity_ids["external_owner"],
+            "statement",
+            "fixture.ExternalOwner",
+        ),
+        TraceEntity(
+            entity_ids["external"],
+            "ssa",
+            "fixture.ExternalValue",
+            entity_ids["external_owner"],
+        ),
+        TraceEntity(
+            entity_ids["similar_owner"],
+            "statement",
+            "fixture.SimilarOwner",
+        ),
+        TraceEntity(
+            entity_ids["similar"],
+            "ssa",
+            "fixture.SimilarValue",
+            entity_ids["similar_owner"],
+        ),
+    )
+    snapshots: list[Snapshot] = []
+    occurrences: list[EntityOccurrence] = []
+    metadata: list[MetadataRecord] = []
+    repeated_survivor = tuple(
+        SSAOccurrenceSpec(entity_ids["survivor"], "reference", "%survive😀")
+        for _ in range(10)
+    )
+    rich_values = (
+        SSAOccurrenceSpec(entity_ids["survivor"], "definition", "%survive😀"),
+        SSAOccurrenceSpec(entity_ids["survivor"], "reference", "%survive😀"),
+        SSAOccurrenceSpec(entity_ids["unnamed"], "definition", "%0"),
+        SSAOccurrenceSpec(entity_ids["block_argument"], "definition", "%arg"),
+        SSAOccurrenceSpec(entity_ids["pair_left"], "definition", "%pair:0"),
+        SSAOccurrenceSpec(entity_ids["pair_right"], "definition", "%pair:1"),
+        SSAOccurrenceSpec(entity_ids["external"], "reference", "%same"),
+        SSAOccurrenceSpec(entity_ids["similar"], "definition", "%same"),
+        *repeated_survivor,
+    )
+    before_metadata = _metadata_specs("before", "!fixture.before")
+    shared_metadata = _metadata_specs("shared", "!fixture.after")
+    final_metadata = _metadata_specs("final", "!fixture.final")
+    all_snapshot_entities = tuple(entity.id for entity in entities)
+
+    a_before = _append_metadata_snapshot(
+        snapshots,
+        occurrences,
+        metadata,
+        event_id=METADATA_EVENT_IDS["A"],
+        state="before",
+        root_entity_id=entity_ids["root"],
+        values=rich_values,
+        entity_ids=all_snapshot_entities,
+        metadata_specs=before_metadata,
+        split_first_occurrence=True,
+    )
+    a_after = _append_metadata_snapshot(
+        snapshots,
+        occurrences,
+        metadata,
+        event_id=METADATA_EVENT_IDS["A"],
+        state="after",
+        root_entity_id=entity_ids["root"],
+        values=rich_values,
+        entity_ids=all_snapshot_entities,
+        metadata_specs=shared_metadata,
+        split_first_occurrence=True,
+    )
+    b_before = _append_metadata_snapshot(
+        snapshots,
+        occurrences,
+        metadata,
+        event_id=METADATA_EVENT_IDS["B"],
+        state="before",
+        root_entity_id=entity_ids["root"],
+        values=rich_values,
+        entity_ids=all_snapshot_entities,
+        metadata_specs=shared_metadata,
+        split_first_occurrence=True,
+    )
+    b_after = _append_metadata_snapshot(
+        snapshots,
+        occurrences,
+        metadata,
+        event_id=METADATA_EVENT_IDS["B"],
+        state="after",
+        root_entity_id=entity_ids["root"],
+        values=(
+            SSAOccurrenceSpec(
+                entity_ids["survivor"],
+                "definition",
+                "%survive😀",
+            ),
+            SSAOccurrenceSpec(entity_ids["unnamed"], "definition", "%0"),
+            SSAOccurrenceSpec(entity_ids["external"], "reference", "%same"),
+        ),
+        entity_ids=all_snapshot_entities,
+        metadata_specs=final_metadata,
+    )
+    stack = InvocationStack(
+        "stack-0", (FrameLocation("metadata_viewer.py", 17, "rewrite"),)
+    )
+    events = (
+        _fixture_event(
+            METADATA_EVENT_IDS["A"],
+            0,
+            None,
+            0,
+            "MetadataARule",
+            entity_ids["root"],
+            a_before,
+            a_after,
+        ),
+        _fixture_event(
+            METADATA_EVENT_IDS["B"],
+            1,
+            None,
+            1,
+            "MetadataBRule",
+            entity_ids["root"],
+            b_before,
+            b_after,
+        ),
+    )
+    operation = MutationOperation(
+        "operation-0",
+        0,
+        METADATA_EVENT_IDS["A"],
+        None,
+        "SSAValue.replace_by",
+        "completed",
+        (entity_ids["external"],),
+        (entity_ids["survivor"],),
+        "stack-0",
+    )
+    relation = ProvenanceRelation(
+        "relation-0",
+        "ssa_uses_retargeted_to",
+        entity_ids["external"],
+        entity_ids["survivor"],
+        "operation-0",
+    )
+    return Trace(
+        schema_version=1,
+        complete=True,
+        configurations=(configuration,),
+        styles=styles,
+        entities=entities,
+        snapshots=tuple(snapshots),
+        occurrences=tuple(occurrences),
+        metadata=tuple(metadata),
+        stacks=(stack,),
+        events=events,
+        operations=(operation,),
+        relations=(relation,),
+    )
+
+
+def _metadata_specs(label: str, survivor_type: str) -> tuple[MetadataSpec, ...]:
+    entity_ids = METADATA_ENTITY_IDS
+
+    def present(
+        entity_label: str,
+        namespace: str,
+        key: str,
+        qualified_type: str,
+        text: str,
+        path: str,
+    ) -> MetadataSpec:
+        return MetadataSpec(
+            entity_ids[entity_label],
+            namespace,
+            key,
+            "present",
+            RenderedValue(qualified_type, text, path),
+        )
+
+    records = [
+        present("survivor", "ssa", "name", "builtins.str", "'survivor'", "repr"),
+        present(
+            "survivor",
+            "ssa",
+            "type",
+            "fixture.PrintableType",
+            survivor_type,
+            "printable",
+        ),
+        present(
+            "survivor",
+            "hint",
+            "phase",
+            "builtins.str",
+            label,
+            "repr",
+        ),
+        present(
+            "survivor",
+            "hint",
+            "long",
+            "builtins.str",
+            METADATA_LONG_TEXT,
+            "repr",
+        ),
+        present(
+            "survivor",
+            "hint",
+            "multiline",
+            "builtins.str",
+            METADATA_MULTILINE_TEXT,
+            "repr",
+        ),
+        present(
+            "survivor",
+            "analysis",
+            "value",
+            "builtins.bool",
+            "False",
+            "repr",
+        ),
+        MetadataSpec(
+            entity_ids["unnamed"],
+            "ssa",
+            "name",
+            "absent",
+            None,
+        ),
+        present(
+            "unnamed",
+            "ssa",
+            "type",
+            "fixture.EmptyPrintable",
+            "",
+            "printable",
+        ),
+        present(
+            "unnamed",
+            "analysis",
+            "value",
+            "builtins.str",
+            "",
+            "printable",
+        ),
+        present(
+            "block_argument",
+            "ssa",
+            "name",
+            "builtins.str",
+            "'arg'",
+            "repr",
+        ),
+        present(
+            "block_argument",
+            "ssa",
+            "type",
+            "fixture.FailingPrintable",
+            "  spaced\n type  ",
+            "repr",
+        ),
+        present(
+            "block_argument",
+            "analysis",
+            "value",
+            "builtins.NoneType",
+            "None",
+            "repr",
+        ),
+        present(
+            "pair_left",
+            "ssa",
+            "name",
+            "builtins.str",
+            "'pair-left'",
+            "repr",
+        ),
+        present(
+            "pair_left",
+            "ssa",
+            "type",
+            "fixture.EqualTextA",
+            "same-type",
+            "printable",
+        ),
+        present(
+            "pair_left",
+            "analysis",
+            "value",
+            "builtins.dict",
+            "{}",
+            "repr",
+        ),
+        present(
+            "pair_right",
+            "ssa",
+            "name",
+            "builtins.str",
+            "'pair-right'",
+            "repr",
+        ),
+        present(
+            "pair_right",
+            "ssa",
+            "type",
+            "fixture.EqualTextB",
+            "same-type",
+            "repr",
+        ),
+        present(
+            "pair_right",
+            "analysis",
+            "value",
+            "builtins.bool",
+            "True",
+            "repr",
+        ),
+        present(
+            "external",
+            "ssa",
+            "name",
+            "builtins.str",
+            "'external'",
+            "repr",
+        ),
+        present(
+            "external",
+            "ssa",
+            "type",
+            "fixture.ExternalType",
+            "external-type",
+            "printable",
+        ),
+        present(
+            "external",
+            "hint",
+            METADATA_HOSTILE,
+            "builtins.str",
+            f"{METADATA_HOSTILE}\n{METADATA_LONG_TEXT}",
+            "repr",
+        ),
+        present(
+            "similar",
+            "ssa",
+            "name",
+            "builtins.str",
+            "'same'",
+            "repr",
+        ),
+        present(
+            "similar",
+            "ssa",
+            "type",
+            "fixture.HostileType",
+            METADATA_HOSTILE,
+            "printable",
+        ),
+        present(
+            "similar",
+            "analysis",
+            "value",
+            "builtins.int",
+            "0",
+            "repr",
+        ),
+    ]
+    return tuple(records)
 
 
 def coarse_provenance_trace() -> Trace:
@@ -1598,6 +2031,103 @@ def _append_ssa_snapshot(
     return snapshot_id
 
 
+def _append_metadata_snapshot(
+    snapshots: list[Snapshot],
+    occurrences: list[EntityOccurrence],
+    metadata: list[MetadataRecord],
+    *,
+    event_id: str,
+    state: str,
+    root_entity_id: str,
+    values: tuple[SSAOccurrenceSpec, ...],
+    entity_ids: tuple[str, ...],
+    metadata_specs: tuple[MetadataSpec, ...],
+    split_first_occurrence: bool = False,
+) -> str:
+    snapshot_id = f"snapshot-{len(snapshots)}"
+    text_parts: list[str] = []
+    value_intervals: list[tuple[SSAOccurrenceSpec, int, int]] = []
+    cursor = 0
+    for occurrence_specification in values:
+        if text_parts:
+            text_parts.append("\n")
+            cursor += 1
+        start = cursor
+        text_parts.append(occurrence_specification.text)
+        cursor += len(occurrence_specification.text)
+        value_intervals.append((occurrence_specification, start, cursor))
+    text = "".join(text_parts)
+
+    occurrence_ids: list[str] = []
+
+    def append_occurrence(entity_id: str, role: str, start: int, end: int) -> None:
+        occurrence_id = f"occurrence-{len(occurrences)}"
+        occurrences.append(
+            EntityOccurrence(
+                occurrence_id,
+                snapshot_id,
+                entity_id,
+                role,
+                start,
+                end,
+            )
+        )
+        occurrence_ids.append(occurrence_id)
+
+    append_occurrence(root_entity_id, "container", 0, len(text))
+    for occurrence_specification, start, end in value_intervals:
+        append_occurrence(
+            occurrence_specification.entity_id,
+            occurrence_specification.role,
+            start,
+            end,
+        )
+
+    metadata_ids: list[str] = []
+    for metadata_specification in metadata_specs:
+        metadata_id = f"metadata-{len(metadata)}"
+        metadata.append(
+            MetadataRecord(
+                metadata_id,
+                snapshot_id,
+                metadata_specification.entity_id,
+                metadata_specification.namespace,
+                metadata_specification.key,
+                metadata_specification.presence,
+                metadata_specification.value,
+            )
+        )
+        metadata_ids.append(metadata_id)
+
+    style_spans: tuple[StyleSpan, ...]
+    if split_first_occurrence:
+        first_start, first_end = value_intervals[0][1:]
+        split = first_start + (first_end - first_start) // 2
+        style_spans = (
+            StyleSpan(0, split, "style-0"),
+            StyleSpan(split, len(text), "style-1"),
+        )
+    else:
+        style_spans = (StyleSpan(0, len(text), "style-0"),)
+    snapshots.append(
+        Snapshot(
+            id=snapshot_id,
+            event_id=event_id,
+            state=state,
+            schema_version=1,
+            configuration_id="configuration-0",
+            root_entity_id=root_entity_id,
+            text=text,
+            style_spans=style_spans,
+            entity_ids=entity_ids,
+            occurrence_ids=tuple(occurrence_ids),
+            metadata_ids=tuple(metadata_ids),
+            analysis_supplied=True,
+        )
+    )
+    return snapshot_id
+
+
 def _append_detailed_snapshot(
     snapshots: list[Snapshot],
     occurrences: list[EntityOccurrence],
@@ -1635,19 +2165,47 @@ def _append_detailed_snapshot(
             ),
         )
     )
-    metadata_id = f"metadata-{len(metadata)}"
-    metadata.append(
-        MetadataRecord(
-            metadata_id,
-            snapshot_id,
-            value_entity_id,
-            "analysis",
-            f"key-{state}-{VIEWER_HOSTILE}",
-            "present",
-            RenderedValue(
-                "builtins.str",
-                metadata_text,
-                "repr" if state == "before" else "printable",
+    metadata_ids = tuple(f"metadata-{len(metadata) + index}" for index in range(3))
+    metadata.extend(
+        (
+            MetadataRecord(
+                metadata_ids[0],
+                snapshot_id,
+                value_entity_id,
+                "ssa",
+                "name",
+                "present" if state == "before" else "absent",
+                (
+                    RenderedValue("builtins.str", f"name-{state}", "repr")
+                    if state == "before"
+                    else None
+                ),
+            ),
+            MetadataRecord(
+                metadata_ids[1],
+                snapshot_id,
+                value_entity_id,
+                "ssa",
+                "type",
+                "present",
+                RenderedValue(
+                    "fixture.Type",
+                    f"type-{state}-{VIEWER_HOSTILE}",
+                    "printable" if state == "before" else "repr",
+                ),
+            ),
+            MetadataRecord(
+                metadata_ids[2],
+                snapshot_id,
+                value_entity_id,
+                "analysis",
+                f"key-{state}-{VIEWER_HOSTILE}",
+                "present",
+                RenderedValue(
+                    "builtins.str",
+                    metadata_text,
+                    "repr" if state == "before" else "printable",
+                ),
             ),
         )
     )
@@ -1663,7 +2221,7 @@ def _append_detailed_snapshot(
             (StyleSpan(0, len(text), style_id),),
             (root_entity_id, value_entity_id),
             (container_id, value_id),
-            (metadata_id,),
+            metadata_ids,
             True,
         )
     )

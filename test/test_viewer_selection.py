@@ -492,7 +492,14 @@ def test_selected_facts_use_exact_owner_closure_and_dedupe_canonical_records(
                 "occurrence-2",
                 "occurrence-3",
             ],
-            "metadata_ids": ["metadata-0", "metadata-1"],
+            "metadata_ids": [
+                "metadata-0",
+                "metadata-1",
+                "metadata-2",
+                "metadata-3",
+                "metadata-4",
+                "metadata-5",
+            ],
             "stack_ids": ["stack-0", "stack-2"],
             "operation_ids": ["operation-0"],
             "relation_ids": [],
@@ -544,7 +551,11 @@ def test_selected_facts_use_exact_owner_closure_and_dedupe_canonical_records(
         "occurrence-4",
         "occurrence-5",
     ]
-    assert [item["id"] for item in child["canonical"]["metadata"]] == ["metadata-2"]
+    assert [item["id"] for item in child["canonical"]["metadata"]] == [
+        "metadata-6",
+        "metadata-7",
+        "metadata-8",
+    ]
     assert child["canonical"]["events"][0]["after_snapshot_id"] is None
     assert child["canonical"]["events"][0]["result"] is None
     assert "parent metadata" not in json.dumps(child)

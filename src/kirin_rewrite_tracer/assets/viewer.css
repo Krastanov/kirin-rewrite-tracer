@@ -153,6 +153,79 @@ button:focus-visible,
   box-shadow: inset 0 0 0 2px var(--provenance);
 }
 
+.ssa-metadata-suffix {
+  color: var(--metadata);
+  font-style: italic;
+  white-space: pre;
+}
+
+.ssa-metadata-overlay {
+  position: fixed;
+  z-index: 2;
+  inset-block-start: var(--overlay-block-start);
+  inset-inline-start: var(--overlay-inline-start);
+  inline-size: max-content;
+  max-inline-size: min(36rem, calc(100vw - 1rem));
+  max-block-size: min(20rem, calc(50vh - 2rem));
+  overflow: auto;
+  overscroll-behavior: contain;
+  padding: 0.75rem;
+  color: var(--text);
+  background: var(--raised);
+  border: 1px solid var(--border);
+  border-radius: 0.25rem;
+  white-space: normal;
+}
+
+.ssa-metadata-overlay[data-measuring="true"] {
+  visibility: hidden;
+}
+
+.ssa-metadata-overlay h3,
+.ssa-metadata-overlay h4,
+.ssa-metadata-overlay h5,
+.ssa-metadata-overlay h6 {
+  margin-block: 0 0.5rem;
+}
+
+.ssa-metadata-bindings,
+.ssa-metadata-inventory dl,
+.ssa-metadata-value {
+  margin-block: 0 0.75rem;
+}
+
+.ssa-metadata-binding,
+.ssa-metadata-field {
+  display: grid;
+  grid-template-columns: minmax(8rem, auto) minmax(0, 1fr);
+  gap: 0.5rem;
+}
+
+.ssa-metadata-field dt {
+  color: var(--muted);
+}
+
+.ssa-metadata-field dd {
+  min-inline-size: 0;
+  margin: 0;
+}
+
+.ssa-metadata-record {
+  margin-block-start: 0.75rem;
+  padding-block-start: 0.75rem;
+  border-block-start: 1px solid var(--border);
+}
+
+.ssa-metadata-exact-value,
+.ssa-metadata-absent {
+  font-family: ui-monospace, monospace;
+  white-space: pre;
+}
+
+.ssa-metadata-absent {
+  margin: 0;
+}
+
 .facts {
   max-block-size: 22rem;
   overflow: auto;
