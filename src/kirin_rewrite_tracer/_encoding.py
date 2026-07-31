@@ -31,6 +31,7 @@ from ._model import (
     StyleSpan,
     Trace,
     TraceEntity,
+    _snapshot_semantic_key,
 )
 
 Primitive: TypeAlias = (
@@ -275,6 +276,7 @@ def _encode_effect(item: EntityEffect) -> PrimitiveObject:
 
 def _encode_projection(trace: Trace) -> PrimitiveObject:
     index = trace.index()
+    semantic_classes: dict[object, str] = {}
     style_classes: list[Primitive] = [
         {
             "style_id": style.id,
@@ -285,12 +287,18 @@ def _encode_projection(trace: Trace) -> PrimitiveObject:
     snapshots: list[Primitive] = []
     occurrence_text: list[Primitive] = []
     for snapshot in trace.snapshots:
+        semantic_key = _snapshot_semantic_key(trace, index, snapshot)
+        semantic_class = semantic_classes.get(semantic_key)
+        if semantic_class is None:
+            semantic_class = f"snapshot-semantic-{len(semantic_classes)}"
+            semantic_classes[semantic_key] = semantic_class
         occurrences = tuple(
             index.occurrence(item_id) for item_id in snapshot.occurrence_ids
         )
         snapshots.append(
             {
                 "snapshot_id": snapshot.id,
+                "semantic_class": semantic_class,
                 "render_runs": _render_runs(snapshot, occurrences),
             }
         )
