@@ -1,7 +1,8 @@
 # Pinned Headed-Chrome Verification
 
 This ledger records the 2026-07-31 browser run over production source commit
-`e8077564b5503b2b02bd51230657f25cad00cd85`.
+`ae2d1bed94a1b812e3cae98dc14dfed45d8c2539`, which added the SYS-025 collapse control.
+It supersedes the earlier run over `e8077564b5503b2b02bd51230657f25cad00cd85`.
 
 ## Provision and command
 
@@ -25,7 +26,7 @@ KRT_CHROME_FOR_TESTING_ROOT=/home/stefan/.cache/kirin-rewrite-tracer/chrome-for-
   uv run --python 3.13.11 --frozen python -m pytest -q -m browser
 ```
 
-Final handoff-candidate result: `41 passed, 177 deselected`, no failure or skip.
+Final handoff-candidate result: `47 passed, 177 deselected`, no failure or skip.
 
 [`browser_harness.py`](../../../test/browser_harness.py) applies CDP network blocking
 for `ftp/http/https/ws/wss`, records every request, CSP violation, and console entry,
@@ -43,7 +44,8 @@ and no hostile execution under that denial.
 | SYSV-021 | [`test_viewer_provenance.py`](../../../test/test_viewer_provenance.py) | Implemented: the exact edge policy is exercised, but every tagged occurrence is not hovered in both directions. |
 | SYSV-022 | [`test_viewer_metadata.py`](../../../test/test_viewer_metadata.py) | Passed: definition suffixes, exact owner inventory, hostile inert text, geometry/scroll/dismissal, and role invalidation. |
 | SYSV-020 | [`test_viewer_selection.py`](../../../test/test_viewer_selection.py), [`test_viewer_projection.py`](../../../test/test_viewer_projection.py) | Implemented; isolated metadata schema/namespace/key and rendered qualified-type near-misses do not complete the procedure. |
-| SYSV-023 | [`test_viewer_accessibility.py`](../../../test/test_viewer_accessibility.py) | Implemented; targeted Tab/Shift+Tab checks do not record exhaustive forward/reverse traversal of every visible event control. |
+| SYSV-026 | [`test_viewer_collapse.py`](../../../test/test_viewer_collapse.py) | Implemented; structure, subtree hiding, nested retention, eligibility, disabled presentation, range bounding, Clear persistence, and Enter/Space parity pass on the depth-three selection fixture, which is the only tree exercised. |
+| SYSV-023 | [`test_viewer_accessibility.py`](../../../test/test_viewer_accessibility.py), [`test_viewer_collapse.py`](../../../test/test_viewer_collapse.py) | Implemented; targeted Tab/Shift+Tab checks do not record exhaustive forward/reverse traversal of every visible event control. |
 | SYSV-024 | [`test_viewer_styling.py`](../../../test/test_viewer_styling.py), [`test_viewer_styling_browser.py`](../../../test/test_viewer_styling_browser.py) | Implemented; active-overlay visible/nonzero geometry is not measured in all four required zoom/viewport combinations. |
 | SYSV-019 | [`test_export_browser.py`](../../../test/test_export_browser.py), viewer fixtures | Implemented for the artifact combinations and hostile-domain gap recorded in the [source ledger](source-and-wheel-verification.md#action-audit). |
 | INTV-007 | Selection, projection, provenance, metadata, and facts browser tests | Implemented; the complete reducer cross-product is not one clause-complete durable action. |
