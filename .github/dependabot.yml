@@ -1,0 +1,14 @@
+version: 2
+
+updates:
+  # Python dependencies are deliberately pinned to the versions the verification
+  # ledgers record, so only the workflow actions are tracked automatically.
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: monthly
+    commit-message:
+      prefix: "ci"
+    groups:
+      actions:
+        patterns: ["*"]

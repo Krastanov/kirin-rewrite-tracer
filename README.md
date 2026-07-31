@@ -1,5 +1,7 @@
 # Kirin Rewrite Tracer
 
+[![CI](https://github.com/Krastanov/kirin-rewrite-tracer/actions/workflows/ci.yml/badge.svg)](https://github.com/Krastanov/kirin-rewrite-tracer/actions/workflows/ci.yml)
+
 `kirin-rewrite-tracer` records Kirin rewrite calls as a deeply immutable trace and
 exports that trace as one autonomous, inert HTML viewer.
 
@@ -103,3 +105,8 @@ uv build
 
 The pinned headed-browser command is documented in
 [`test/browser-fixtures/README.md`](test/browser-fixtures/README.md).
+
+Continuous integration runs every gate above on CPython 3.10 through 3.13, repeats the
+suite against the installed wheel, and runs the pinned headed-browser suite on the
+producer runtime. The repository-documentation linter lives in the sibling workspace and
+is not part of continuous integration.
