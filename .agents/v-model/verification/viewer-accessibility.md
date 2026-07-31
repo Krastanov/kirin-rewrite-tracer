@@ -11,6 +11,7 @@ the keyboard or accessibility oracle.
 - **Procedure:** Open the empty trace and the asymmetric SYSV-020 through SYSV-022
   fixtures under SYSV-018 in fresh documents, including a nonempty trace before any
   event is selected. Inspect the DOM and browser accessibility tree for the skip link,
+  always-available Clear button, selected-event facts region,
   zero-event or no-selection workspace target, nested event lists, event buttons,
   labelled SSA workspace and column regions, occurrence buttons, selected-state
   descriptions, polite status region, and absence of custom tree/grid roles. Use
@@ -21,7 +22,9 @@ the keyboard or accessibility oracle.
   Enter, Space, Shift+Enter, Shift+Space, and the existing Ctrl/Meta combinations, while
   guarding against a native click plus a second custom activation. Exercise separately
   a swallowed target, a swallowed anchor with surviving target, parent exclusion and
-  descendant restoration, and an incomplete selected parent. While a descendant is
+  descendant restoration, an incomplete selected parent, and Clear from zero,
+  singleton, range, and parent-dominant selections. Record focus and announcement after
+  each Clear. While a descendant is
   hidden and after it is restored, inventory its DOM button, accessibility node, native
   tab stop, selected state, document order, and focus.
   Traverse every kind of SSA definition and reference in column-major order, including
@@ -61,7 +64,9 @@ the keyboard or accessibility oracle.
 - **Pass criterion:** The first focusable control is a working skip link. In the empty
   trace it reaches the explicit zero-event workspace and no event or occurrence button
   exists; in the nonempty no-selection trace it reaches the labelled empty SSA workspace
-  without selecting an event or inventing an SSA occurrence. Event hierarchy is exposed
+  without selecting an event or inventing an SSA occurrence. Clear remains a native,
+  accessibly named control in every state, and the selected-event facts region is
+  labelled and exposes no selected event initially. Event hierarchy is exposed
   through nested lists and native buttons in displayed depth-first order, with no
   `tree`, `treegrid`, roving focus, or independent descendant-disclosure control. Focus
   traversal alone changes no selection, anchor, row, or column.
@@ -74,6 +79,9 @@ the keyboard or accessibility oracle.
   later-restored descendants have no stale accessibility node, tab stop, selection, or
   focus: while hidden they expose no node or stop, and when restored exactly one button
   and corresponding node reappear unselected in original order without receiving focus.
+  Every Clear activates exactly once, empties selection and anchor, restores all rows,
+  removes derived state, retains focus on Clear, announces the exact zero-selection
+  schema, and leaves the facts region in its explicit no-selection state.
   Every occurrence is one native button in column-major order with exact role, owner,
   and column description; its name equals its exact captured interval, a shared
   occurrence names both state roles, and its adjacent suffix adds neither a stop nor
@@ -99,7 +107,6 @@ the keyboard or accessibility oracle.
   candidate's control, occurrence, or ordered role tuple discards it; neither reversing
   a column removal, reversing either role-tuple transition, nor recreating an equal-key
   control revives it.
-- **Status:** blocked
+- **Status:** planned
 - **Evidence:** None
-- **Nonconformance:** No viewer implementation or durable browser/accessibility test
-  exists.
+- **Nonconformance:** None

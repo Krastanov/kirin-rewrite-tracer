@@ -1,7 +1,7 @@
 # Trace Event Requirements
 
-The uniform event model, hierarchy, and neutral incomplete-event behavior are confirmed.
-General state comparison remains open.
+The uniform event model, hierarchy, neutral incomplete-event behavior, and normalized
+snapshot comparison are confirmed. This comparison is not a general IR diff.
 
 ## SYS-001 — Capture paired rewrite states
 
@@ -13,7 +13,9 @@ General state comparison remains open.
   with independently known changed and unchanged SSA outcomes, tracing them produces an
   attributable before/after pair per occurrence, ordered correctly and equal to the
   known input and result; each normally returning no-op has two equal states matching
-  the independently known unchanged state.
+  the independently known unchanged state. Snapshot equality compares the complete
+  normalized retained payload, excluding only snapshot-record identity and event/state
+  binding and treating equal effective per-code-point styles as equal.
 - **Verification:** SYSV-001 (test)
 - **Origin / risk:** Confirmed developer interview, 2026-07-29; diagnostic fidelity risk.
 - **Context:** [Kirin integration reference](../../context/kirin-integration.md)
@@ -21,13 +23,14 @@ General state comparison remains open.
 ## SYS-003 — Preserve rewrite behavior while tracing
 
 - **Normative statement:** Within the declared support envelope, tracing shall not change
-  a rewrite's returned result, propagated exception, or resulting final IR relative to
-  the same execution without tracing.
+  a rewrite's returned result object, propagated exception object, or resulting final IR
+  relative to the same execution without tracing.
 - **Parents:** STK-001, STK-004
 - **Acceptance criterion:** Given equivalent deterministic successful, mutating, and
-  raising fixtures, traced and untraced executions have equivalent rewrite results,
-  propagated exceptions, and final IR under the comparison semantics declared by the
-  product.
+  raising fixtures, traced and untraced executions return the same result object or
+  propagate the same exception object, and have identical explicit final statement
+  order, parent associations, SSA-use target identities, metadata, and normalized styled
+  snapshots.
 - **Verification:** SYSV-003 (test)
 - **Origin / risk:** Confirmed developer interview, 2026-07-29; instrumentation-induced
   behavior would invalidate diagnostic conclusions.
@@ -101,6 +104,9 @@ General state comparison remains open.
   hierarchy, before state, invocation stack, and operation ownership. Complete ancestors
   retain after states; incomplete events do not. Every trace containing an incomplete
   event is marked incomplete, and traced behavior matches the untraced fixtures.
+  Only the presence of an incomplete event makes aggregate event-derived completeness
+  incomplete; an exception outside every supported public frame creates no event and
+  does not by itself change aggregate completeness.
 - **Verification:** SYSV-015 (test)
 - **Origin / risk:** Developer confirmation and generic-profile investigation,
   2026-07-30; completed diagnostic evidence should survive failure without relying on

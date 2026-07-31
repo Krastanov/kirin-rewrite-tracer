@@ -71,9 +71,39 @@ the oracle. Screenshots may diagnose failures but are not golden evidence.
   correctly labelled, horizontally reachable, and operable without truncation,
   clipping, stacking, or reordering. Maximum scrolling exposes the complete final
   column and every tested control and open overlay has a visible nonzero bounding box
-  within the viewport when active. No theme, animation, custom search/filter, graphical
+  within the viewport when active. Diagnostic observations at `639 × 480` and
+  `640 × 479` are labelled below the support floor and establish no compatibility
+  result. No theme, animation, custom search/filter, graphical
   provenance, mobile/touch layout, print view, or UI-persistence control exists.
-- **Status:** blocked
+- **Status:** planned
 - **Evidence:** None
-- **Nonconformance:** No viewer implementation or durable computed-style/layout test
-  exists.
+- **Nonconformance:** None
+
+## SYSV-025 — Analyze the universal large-viewport layout invariant
+
+- **Covers:** SYS-024
+- **Method:** analysis
+- **Procedure:** Inspect the implemented cascade and DOM construction for the durable
+  invariant that the event hierarchy and every SSA state are nonshrinking, consecutive,
+  no-wrap children of one inline-direction horizontal scroller; no supported media query,
+  script branch, container query, viewport-relative maximum, overflow clipping, or
+  alternate layout may reorder, stack, truncate, or hide a column or control. Derive how
+  increasing either CSS viewport dimension at fixed 100% or 200% Chrome page zoom can
+  only preserve or increase available viewport area while horizontal `scrollWidth`
+  continues to expose the same ordered content. Corroborate the invariant with boundary
+  and property sampling at `640 × 480`, one-pixel larger dimensions, asymmetric wide and
+  tall dimensions, and generated varied larger viewports at both zoom levels. Record
+  below-floor samples separately as exclusions.
+- **Environment / configuration:** Implemented fixed viewer cascade and classic-script
+  DOM construction, inspected against CSS layout rules and corroborated in headed Chrome
+  for Testing `151.0.7922.47`, revision `r1654411`, `linux64`.
+- **Pass criterion:** The durable inspection artifact identifies every rule and state
+  mutation affecting workspace geometry and demonstrates that all supported states use
+  one monotonic no-wrap horizontal layout with no viewport-conditioned alternate. Every
+  boundary and generated larger sample retains exact column order, nonzero complete
+  controls, unwrapped SSA text, and horizontal reachability at both zoom levels. A
+  counterexample invalidates the universal claim; results below 640 pixels wide or 480
+  pixels high are explicitly excluded rather than passed.
+- **Status:** planned
+- **Evidence:** None
+- **Nonconformance:** None

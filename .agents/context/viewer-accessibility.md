@@ -32,6 +32,10 @@ three deterministic forms: `Selected: 0; hidden: H.`, `Selected: 1; event: E; hi
 H.`, or `Selected: N; first: E1; last: E2; hidden: H.` A first-focus skip link avoids
 forcing a keyboard user through a large event list before reaching the labelled empty or
 populated SSA workspace.
+An always-available native Clear button follows ordinary Tab order, invokes the same
+zero-selection reducer once for pointer or keyboard activation, and retains focus after
+clearing. The canonical selected-event facts display is a labelled region, including its
+explicit no-selection state.
 
 Native Enter and Space dispatch the same reducer entry as plain click; Shift plus either
 dispatches the same range entry. Focus alone is not selection. After activation, keep

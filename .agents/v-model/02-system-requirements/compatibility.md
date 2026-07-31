@@ -2,13 +2,20 @@
 
 V1 has a shape-based public-entry support category. The pinned Kirin overrides are
 compatibility fixtures, not a production allowlist. Its detector is constrained to
-documented, minor-version-generic Python interfaces, while handling of other callable
-forms and the exact supported interpreter range remain unspecified.
+documented, minor-version-generic Python interfaces. V1 supports CPython
+`>=3.10,<3.14`; observable unsupported callable execution invalidates the session, while
+unobservable and never-executed callable forms remain explicit input assumptions.
 
 ## SYS-002 — Bound the v1 support envelope
 
-- **Normative statement:** The v1 product shall support tracing only against Kirin commit
-  `7cdc2e02ab7ef0b3f80aaa88f930ff34015d240a` with Rich 15.0.0, using the pinned Kirin
+- **Normative statement:** The v1 product shall support tracing only on CPython
+  `>=3.10,<3.14` against Kirin commit
+  `7cdc2e02ab7ef0b3f80aaa88f930ff34015d240a` with Rich exactly 15.0.0. The Kirin
+  revision shall be proved through PEP 610 VCS provenance for the installed distribution
+  or a clean local Git checkout at that exact commit; source or API fingerprints shall
+  not be treated as commit proof. Before activation, the product shall require the five
+  expected raw descriptors for `Statement.replace_by`, `SSAValue.replace_by`,
+  `Statement.from_stmt`, `Region.clone`, and `Statement.delete`, using the pinned Kirin
   printer's dark theme, indentation marks, no selected inline hint or printer analysis,
   and Rich default highlighter. Caller analysis admitted by SYS-005 shall be treated only
   as snapshot metadata and shall not alter that rendering configuration. V1 shall support
@@ -25,26 +32,17 @@ forms and the exact supported interpreter range remain unspecified.
   `repr()` hooks terminate and remain observationally pure with respect to the traced
   IR. Code executing during the context neither replaces the selected mutation
   descriptors nor branches on their identity or on tracer-added call frames. The
-  product is not required to detect an input-assumption violation.
+  product is not required to detect an input-assumption violation. Cleanup shall remove
+  the profile callback or restore a descriptor only when it is still the exact
+  tracer-installed object and shall never clobber a foreign replacement.
 - **Parents:** STK-001, STK-002, STK-003
-- **Acceptance criterion:** Given the pinned Kirin and Rich revisions, declared printer
-  configuration whose snapshot and printer hooks and every invoked
-  metadata-representation hook satisfy the no-rewrite and no-selected-mutation
-  assumptions, optional
-  caller-analysis metadata whose invoked `Printable.print_str()` and `repr()` hooks also
-  terminate and are observationally pure, `sys.getprofile()` equal to `None`, one trace
-  context, no behavioral inspection or replacement of selected mutation descriptors or
-  tracer-added frames, and a process satisfying the lifetime assumptions, tracing can
-  run; both a
-  normal exit and an exit caused by a body exception restore the profile slot to `None`.
-  Entry with an installed profile function explicitly fails before activation and leaves
-  that function installed. Another Kirin or Rich revision, non-default theme,
-  indentation, inline hint, printer analysis, highlighter, or nested activation is
-  outside the supported configuration; a run violating an input assumption has no
-  guaranteed tracer behavior or diagnostic.
+- **Acceptance criterion:** On CPython 3.10–3.13, the proved pinned revisions,
+  descriptors, empty profile slot, non-nested context, declared printer configuration,
+  optional analysis, pure representation hooks, and lifetime assumptions permit normal
+  and body-exception runs and restore an owned slot. Every varied runtime, provenance,
+  revision, descriptor, profile, nesting, or printer input fails before activation.
+  Fingerprints never prove a commit, and cleanup never overwrites foreign state.
 - **Verification:** SYSV-002 (test)
-- **Origin / risk:** Confirmed developer interviews, 2026-07-29 and 2026-07-30; narrow
-  v1 compatibility is preferred over guessed behavior.
 - **Context:** [Kirin integration reference](../../context/kirin-integration.md)
 
 ## SYS-004 — Reject unsupported tracing use
@@ -52,17 +50,21 @@ forms and the exact supported interpreter range remain unspecified.
 - **Normative statement:** The product shall explicitly signal failure for every rule,
   tracing configuration, required snapshot-value representation category, or
   presentation path that it declares unsupported, instead of silently omitting activity
-  or information or presenting an incomplete trace as complete. This obligation does
-  not apply to violations of the input assumptions explicitly declared in SYS-002.
+  or information. Unsupported use shall atomically invalidate the active recorder,
+  immediately raise one stable unsupported-use error, and expose no partial trace or
+  export. Catching that error inside the trace body shall not make the session valid:
+  otherwise-normal context exit shall raise the same error object again. If a distinct
+  body exception occurs after unsupported use was already signalled, that later exception
+  shall remain the propagated object. This obligation does not apply to violations of
+  the input assumptions explicitly declared in SYS-002.
 - **Parents:** STK-001, STK-002
 - **Acceptance criterion:** Given every declared unsupported category other than a
   SYS-002 input-assumption violation, including each declared unsupported required-value
-  representation and presentation path, tracing explicitly signals failure, omits no
-  information from a trace reported as successful, and does not report any partial trace
-  as complete.
+  representation and presentation path, tracing explicitly signals failure and exposes
+  no trace or export. Caught unsupported use reappears by identity on otherwise-normal
+  exit, a later distinct exception propagates by identity, and repeated recorder access
+  cannot recover partial state.
 - **Verification:** SYSV-004 (test)
-- **Origin / risk:** Confirmed developer interview, 2026-07-29; silent incompleteness
-  creates misleading diagnostics.
 - **Context:** [Kirin integration reference](../../context/kirin-integration.md)
 
 ## SYS-010 — Support ordinary synchronous public rewrite entries
@@ -78,7 +80,11 @@ forms and the exact supported interpreter range remain unspecified.
   and shall not create another event only when its `self` is the exact `self` of the
   innermost active public rewrite frame. An ordinary synchronous Python
   specialized-handler call with any other `self` is unsupported under SYS-004 and shall
-  not leave the enclosing event or trace presented as complete.
+  not leave a trace. An observable public frame whose owner, descriptor, `self`, `node`,
+  or executing code does not satisfy this shape, and observable execution of generator,
+  coroutine, or async-generator rewrite code, is likewise unsupported. A deferred
+  callable never executed and a C or custom descriptor that produces no classifiable
+  Python frame is an input assumption with no v1 support claim or required diagnostic.
 - **Parents:** STK-001, STK-002
 - **Acceptance criterion:** The inherited base dispatcher on a region, block, and
   statement; an ordinary direct override; explicit same-instance superclass delegation;
@@ -87,11 +93,9 @@ forms and the exact supported interpreter range remain unspecified.
   with one public event per executing public frame. Same-instance specialized dispatch
   creates no extra event. A synthetic cross-instance specialized-handler call and the
   pinned `ScfToCfRule` paths that delegate directly to `ForRule` and `IfElseRule`
-  explicitly fail and produce no trace presented as complete.
+  fail without a trace. Observable malformed and executed deferred bodies invalidate;
+  construction without execution establishes no diagnostic claim.
 - **Verification:** SYSV-010 (test), SYSV-004 (test)
-- **Origin / risk:** Confirmed developer interview, 2026-07-30; shape-based support keeps
-  the quick tracer useful for ordinary project rules without class-specific production
-  branches.
 - **Context:** [Kirin integration reference](../../context/kirin-integration.md) and
   [orchestration tracing options](../../context/orchestration-tracing.md)
 
@@ -102,22 +106,14 @@ forms and the exact supported interpreter range remain unspecified.
   by the pinned Kirin revision, and Python 3.13. It shall not require bytecode or opcode
   layout, interpreter-private frame or code state, an execution-monitoring interface
   introduced after Python 3.10, mutation or concrete type or identity of frame locals,
-  or detector behavior selected by Python minor version. Initial execution verification
-  may be limited to CPython 3.13.11; that limitation shall neither pin product support to
-  3.13 nor be presented as evidence for an untested interpreter or version.
+  or detector behavior selected by Python minor version. Product support is limited to
+  CPython 3.10 through 3.13; evidence for one minor shall not be presented as evidence
+  for another.
 - **Parents:** STK-001, STK-002
-- **Acceptance criterion:** Inspection finds that the version-sensitive parts of profile
-  ownership and frame classification use only `sys.getprofile()`, `sys.setprofile()`,
-  their documented `call` and `return` event contract, class MRO and namespace
-  inspection, the documented predicates for plain Python functions and their generator,
-  coroutine, and async-generator forms, function `__code__`, frame `f_code`, read-only
-  mapping lookups from frame `f_locals`, and ordinary runtime type and identity checks.
-  The detector does not use `sys.monitoring`, bytecode or opcode inspection, `f_lasti`,
-  version-specific frame additions, undocumented frame or code attributes, native frame
-  access, writes to `f_locals`, an assumption that `f_locals` is a `dict`, or a Python
-  minor-version branch to choose detection behavior. Any CPython 3.13.11 execution
-  evidence is labeled as single-environment evidence.
+- **Acceptance criterion:** Inspection finds only documented profile calls/events,
+  MRO/namespace and plain-function predicates, function/frame code, read-only mapping
+  lookups, and ordinary type/identity checks. It finds no monitoring, bytecode, private
+  frame, native, local-write/concrete-map, or minor-version branch. Source and installed
+  suites exercise that detector on CPython 3.10–3.13.
 - **Verification:** SYSV-011 (inspection)
-- **Origin / risk:** Confirmed developer interview, 2026-07-30; a 3.13-only initial test
-  environment is acceptable, but minor-version-specific detector machinery is not.
 - **Context:** [Python profiling portability](../../context/python-profiling-portability.md)

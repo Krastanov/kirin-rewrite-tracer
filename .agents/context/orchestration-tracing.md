@@ -17,7 +17,8 @@ trade study. SYS-002 makes exclusive ownership of the
 current thread's Python profile slot externally normative; SYS-011 constrains the
 detector to the documented cross-minor surface in the
 [Python portability reference](python-profiling-portability.md). Callable forms outside
-the confirmed ordinary synchronous category remain unresolved.
+the confirmed ordinary synchronous category invalidate when their unsupported execution
+is observable; deferred and unobservable forms remain explicit v1 input assumptions.
 
 ## Options considered
 
@@ -74,20 +75,12 @@ catches the child exit can return normally and retain its own after state, while
 child stays incomplete. A propagated exit makes each recorded public frame incomplete.
 An exception outside a public frame does not manufacture an event.
 
-Event identifiers should be opaque outside the trace. A monotonic integer and zero-based
-ordinals are the simplest internal representation, but the current system requirement
-only exposes uniqueness and ordering.
-
-Candidate exclusions still requiring a product decision include a non-IR node,
-non-Python descriptor, generator/coroutine/async-generator `rewrite`,
-and additional root, rendering, inventory, or capture failures beyond the metadata
-representation failures named in SYS-007. A non-`RewriteResult` return is no longer an
-open classification question: SYS-015 retains it neutrally as incomplete. If another
-form is declared unsupported, SYS-004 requires explicit failure rather than a trace that
-appears complete. A profile hook alone cannot observe a generator or coroutine merely
-being called and never resumed or awaited, nor a C-level callable that creates no
-suitable Python frame; guaranteeing immediate rejection for those forms would require a
-preflight or an additional lookup/wrapping guard.
+Event identifiers are opaque domain-prefixed monotonic values and sibling ordinals are
+zero based. A non-`RewriteResult` public return remains neutral incomplete. An observable
+malformed public frame or resumed generator, awaited coroutine, or iterated
+async-generator invalidates the recorder. A profile hook cannot observe a deferred
+callable never executed or a C/custom descriptor that creates no suitable Python frame;
+those remain input assumptions with no v1 diagnostic claim.
 
 Do not use `sys.call_tracing` or another recursive-profile technique. V1 deliberately
 makes no guarantee about activity initiated from its own profile callback. Because

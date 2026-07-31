@@ -11,8 +11,10 @@ Pass only with durable evidence covering every criterion; omit transient logs.
   environment, stop the producer, and open each directly in the target browser. Use
   only the nonempty documents' tree to plain-click an anchor, Shift-click outward then
   inward, and plain-click a selected range member. Inspect known styled SSA, completion
-  and absent-after states; select a parent and later exclude it through another
-  selection; inspect an exact-equal shared handoff whose middle value has distinct
+  and absent-after states; activate Clear from a parent-dominant selection and inspect
+  restored rows, zero-selection facts, and focus; select a parent and later exclude it
+  through another selection; inspect each selected event's canonical facts and an
+  exact-equal shared handoff whose middle value has distinct
   descendant-owned `A`-left and `B`-right facts and an unequal separate handoff. Hover
   tagged values, click them for metadata, and inspect deletion effects and stacks.
   Repeat the representative inspection without a pointer: use the skip link, Tab,
@@ -30,7 +32,10 @@ Pass only with durable evidence covering every criterion; omit transient logs.
   In the incomplete artifact, completed relations and deletion effects remain under
   their original owners and no absent after state is filled from another event. Plain
   click selects exactly one row without toggling it off; Shift-click inclusively expands
-  or contracts from its retained anchor and replaces the prior range. Tree, hover,
+  or contracts from its retained anchor and replaces the prior range. Clear empties the
+  frontier and anchor, restores all rows, removes derived state, and retains its focus.
+  The selected-event facts region exposes exact canonical ownership and explicit absence
+  without copying descendant facts. Tree, hover,
   suffix, and overlay interactions support the prescribed inspection. Parent selection
   hides every descendant row, and a later excluding selection restores the original
   hierarchy unselected. The shared handoff is always labelled with both roles and keeps
@@ -39,9 +44,9 @@ Pass only with durable evidence covering every criterion; omit transient logs.
   selection, provenance, and metadata states without detached focus. Viewer-authored
   text and state cues meet the declared contrast and non-color policy, and every
   consecutive SSA column remains reachable in all declared zoom/viewport combinations.
-- **Status:** blocked
+- **Status:** planned
 - **Evidence:** None
-- **Nonconformance:** No exporter, viewer, or durable acceptance evidence exists.
+- **Nonconformance:** None
 
 ## SYSV-018 — Verify autonomous single-file HTML export
 
@@ -55,8 +60,10 @@ Pass only with durable evidence covering every criterion; omit transient logs.
   target-browser profile while denying external networking. Record the executable's
   reported version and the provisioned artifact's platform and Chrome-for-Testing
   revision before recording
-  page-originated resource requests during loading and the SYSV-019 through SYSV-024
-  interaction scenarios.
+  page-originated resource requests during loading and the SYSV-019 through SYSV-025
+  interaction scenarios. Attempt a missing parent and pre-existing sentinel target,
+  race target creation before publication, and inject encoding, write, flush, close, and
+  final-publication failures while inventorying temporary files.
 - **Environment / configuration:** Headed Chrome for Testing `151.0.7922.47`, revision
   `r1654411`, `linux64` on x86-64 Linux; browser profile and cache outside the export
   directory.
@@ -64,11 +71,13 @@ Pass only with durable evidence covering every criterion; omit transient logs.
   file and no sidecar, leaves its source trace unchanged, initializes after relocation
   with only the browser running, reports version `151.0.7922.47` from the executable and
   `linux64` revision `r1654411` from the provisioned artifact, supports the SYSV-019
-  through SYSV-024 scenarios, and makes no auxiliary-file, `http`, `https`, `ws`, or
-  `wss` request.
-- **Status:** blocked
+  through SYSV-025 scenarios, and makes no auxiliary-file, `http`, `https`, `ws`, or
+  `wss` request. Missing parents fail; every existing or raced target raises
+  `FileExistsError` without changing its bytes; and no failed export leaves a target or
+  temporary file.
+- **Status:** planned
 - **Evidence:** None
-- **Nonconformance:** No exporter or durable browser test exists.
+- **Nonconformance:** None
 
 ## SYSV-019 — Verify retained-trace fidelity and inert content
 
@@ -87,7 +96,9 @@ Pass only with durable evidence covering every criterion; omit transient logs.
   executable-looking script and event-handler markup, comment delimiters, backslashes,
   `__proto__`, apparent URLs and CSS `url(...)`, non-ASCII text, and Unicode line
   separators across free-form trace fields. Open each relocated artifact under
-  SYSV-018, inspect every tagged value and association through document facilities, and
+  SYSV-018, select every event and inspect its always-visible facts inventory and
+  explicit absences, inspect every tagged value and association through document
+  facilities, and
   observe an execution sentinel, interpreted DOM, computed valid styles, and page
   request log.
 - **Environment / configuration:** The same isolated pinned browser environment and
@@ -102,8 +113,12 @@ Pass only with durable evidence covering every criterion; omit transient logs.
   classification, failure snapshot, traceback, or raise-site stack is invented. Hostile
   strings remain exact inert text, trigger no sentinel, add no interpreted node,
   attribute, style, or URL, and initiate no request; valid normalized styles alone
-  produce their expected visual associations. Browser interaction does not alter the
-  source oracle or introduce a second authoritative provenance fact.
-- **Status:** blocked
+  produce their expected visual associations. Every selected-event region contains all
+  and only the selected event's canonically owned event, snapshot, style, entity,
+  occurrence, metadata, stack, operation, relation, and effect fields and explicit
+  absences; zero selection names no event, and parent selection does not copy descendant
+  facts. Browser interaction does not alter the source oracle or introduce a second
+  authoritative provenance fact.
+- **Status:** planned
 - **Evidence:** None
-- **Nonconformance:** No exporter or durable test exists.
+- **Nonconformance:** None

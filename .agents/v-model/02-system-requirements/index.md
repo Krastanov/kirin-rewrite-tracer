@@ -32,5 +32,7 @@ minor-version-generic detector constraint, and partial-but-exact provenance boun
 confirmed, as is one self-contained HTML export for complete and incomplete traces with
 the first tree-and-column interaction model and its narrow exact-handoff snapshot
 equality. V1's browser target, native-control keyboard model, focus behavior, and fixed
-dark cascade are also confirmed. General state comparison, the interpreter support
-range, and detailed unsupported-use failure semantics remain open.
+dark cascade are also confirmed. The CPython `>=3.10,<3.14` range, normalized snapshot
+comparison, atomic unsupported-use invalidation, no-overwrite export, native Clear
+selection, selected-event canonical facts, and explicit presentation floor are
+baselined in the subsystem and component contracts.

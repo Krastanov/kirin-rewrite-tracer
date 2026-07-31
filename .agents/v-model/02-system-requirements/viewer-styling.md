@@ -54,7 +54,9 @@ styles remain faithful and separate.
   consecutive, unwrapped columns in one horizontally scrollable workspace. At Chrome
   page zoom of 100% or 200% and any measured CSS viewport at least 640 pixels wide and
   480 pixels high, the viewer shall not reorder, stack, truncate, or hide their content
-  or controls. SSA text shall preserve whitespace without wrapping. V1 shall provide no
+  or controls. SSA text shall preserve whitespace without wrapping. V1 makes no
+  presentation support claim for a measured viewport below 640 CSS pixels wide or below
+  480 CSS pixels high. V1 shall provide no
   theme switcher, animation, custom search or filtering, graphical provenance panel,
   mobile/touch-specific layout, print view, or persisted UI state.
 - **Parents:** STK-001, STK-002, STK-003, STK-004, STK-005
@@ -78,7 +80,7 @@ styles remain faithful and separate.
   CSS viewports of `1280 × 800` and `640 × 480`, horizontal scrolling reaches every
   unchanged consecutive column and control without wrapping SSA text, clipping a
   control, or reordering states. No deferred v1 control or panel is present.
-- **Verification:** SYSV-024 (test)
+- **Verification:** SYSV-024 (test), SYSV-025 (analysis)
 - **Origin / risk:** Developer authorization and selected design, 2026-07-30; a fixed
   token cascade is smaller and easier to audit than inline, framework, multi-theme, or
   element-specific styling, and preserves captured presentation independently.

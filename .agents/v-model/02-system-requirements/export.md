@@ -16,7 +16,10 @@ presentation are specified separately, and v1 has one reproducible browser targe
   trace. The sole declared-supported v1 environment shall be headed Chrome for Testing
   `151.0.7922.47`, revision `r1654411`, `linux64` on x86-64 Linux. Other browser builds,
   engines, operating systems, headless operation, and mobile or touch environments shall
-  carry no v1 compatibility claim.
+  carry no v1 compatibility claim. Export shall require an existing destination parent
+  and a target that does not exist, shall refuse overwrite with `FileExistsError`, and
+  shall publish through a same-directory atomic no-clobber operation that leaves no
+  temporary file after any failure.
 - **Parents:** STK-005
 - **Acceptance criterion:** Given an empty complete trace, a nonempty complete trace,
   and an aggregate-incomplete trace exported into separate empty directories, each
@@ -26,7 +29,10 @@ presentation are specified separately, and v1 has one reproducible browser targe
   declared-supported headed Chrome for Testing environment, its view initializes and
   supports SYS-019 through SYS-024 while page-level monitoring observes no
   auxiliary-file, `http`, `https`, `ws`, or `wss` request. Substitution of another
-  browser build or platform establishes no compatibility result.
+  browser build or platform establishes no compatibility result. A missing parent fails,
+  a pre-existing or raced target remains byte-for-byte unchanged and raises
+  `FileExistsError`, and injected encoding, write, flush, close, or publication failures
+  leave neither a published target nor a temporary artifact.
 - **Verification:** SYSV-018 (test)
 - **Origin / risk:** Developer confirmation, 2026-07-30; sidecars, servers, or remote
   assets would defeat the confirmed portable offline artifact.
@@ -48,6 +54,10 @@ presentation are specified separately, and v1 has one reproducible browser targe
   with an ancestor or final state, synthesize a failure state or traceback, or classify
   the exit as an exception or explicit return. Derived presentation state and indexes
   shall not mutate the retained trace or create another authoritative provenance fact.
+  The view shall keep an always-visible selected-event facts region that exposes every
+  canonically owned field and explicit absence for the selected event and its owned
+  snapshots, styles, entities, occurrences, metadata, stack, operations, relations, and
+  effects. It shall not copy a descendant-owned fact into a selected parent.
 - **Parents:** STK-001, STK-002, STK-003, STK-004, STK-005
 - **Acceptance criterion:** An exported empty complete trace is unambiguously inspectable
   as zero events. For asymmetric complete and incomplete trace fixtures containing
@@ -58,7 +68,10 @@ presentation are specified separately, and v1 has one reproducible browser targe
   association, and explicit absence equals an independent oracle. Unique hostile strings
   placed across trace-controlled text fields remain exact and inspectable, execute no
   code, create no interpreted element, attribute, style, or URL, and initiate no
-  resource request.
+  resource request. With zero selection the facts region states that no event is
+  selected; with each selected event it exposes all and only that event's canonical
+  inventory and explicit absences, while descendant-owned facts remain under their
+  original owners.
 - **Verification:** SYSV-019 (test)
 - **Origin / risk:** Developer confirmations, 2026-07-29 and 2026-07-30; an artifact that
   flattens styles, metadata, provenance, or code paths would not preserve the diagnostic

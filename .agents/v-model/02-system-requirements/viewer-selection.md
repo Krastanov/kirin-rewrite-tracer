@@ -37,6 +37,12 @@ Keyboard/focus behavior and visual presentation are specified by SYS-023 and SYS
   but unselected, without stale state. Selected events or coarse subtree units shall
   form one consecutive displayed tree range; hidden descendants shall create neither a
   gap nor a state.
+  An always-available native `Clear selection` button shall atomically empty the
+  frontier, set the anchor to null, clear every derived column, highlight, overlay, and
+  descendant state, and restore the complete original event hierarchy unselected.
+  Clear shall remain available with zero selection and repeated activation shall be
+  idempotent. It shall not change the confirmed non-toggle behavior of event-row
+  activation.
   To the right, each frontier event shall retain its logical styled `before` then
   `after`, or explicit absent-after, pair. At a boundary between consecutive selected
   events `A` and `B`, the view shall render `A.after` and `B.before` once as one
@@ -81,7 +87,10 @@ Keyboard/focus behavior and visual presentation are specified by SYS-023 and SYS
   two distinct two-role handoff columns but never one transitive multi-role column. An
   incomplete left event cannot share its absent after state; an incomplete right event
   may share its existing before state with an equal predecessor after state. No
-  incomplete event acquires an after state.
+  incomplete event acquires an after state. Activating Clear from singleton,
+  multi-event, parent-dominant, and already-clear states yields an empty frontier and
+  null anchor, restores every row in original order, and removes all derived state;
+  selecting a row afterward starts from a null anchor while repeated Clear is inert.
 - **Verification:** SYSV-020 (test)
 - **Origin / risk:** Developer confirmations, 2026-07-30; post-action range coordinates,
   additive or toggling gestures, hidden anchors, exposed descendant controls, stale

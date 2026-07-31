@@ -1,7 +1,7 @@
 # Neighboring-Column Provenance Viewer Verification
 
 Use fixtures with independent provenance and geometry oracles. This action remains
-blocked until the viewer and test exist.
+planned until its viewer and durable test exist.
 
 ## SYSV-021 — Verify exact neighboring-column provenance highlighting
 
@@ -60,6 +60,6 @@ blocked until the viewer and test exist.
   right. Neither relation leaks, changes owner, skips a neighbor, or composes through
   either shared column, and every pointer-owned highlight clears when hover ends in the
   no-keyboard-candidate fixture.
-- **Status:** blocked
+- **Status:** planned
 - **Evidence:** None
-- **Nonconformance:** No viewer implementation or durable test exists.
+- **Nonconformance:** None

@@ -39,6 +39,10 @@ Keep capture, export encoding, and browser presentation distinct:
    from single-copy facts, and keeps selection, expansion, and panel state only in
    memory. It never treats the DOM as the canonical trace.
 
+Require an existing destination parent and a nonexistent target. Write a temporary file
+in that same directory and publish atomically without overwrite; an existing or raced
+target raises `FileExistsError`, and every failure removes the temporary artifact.
+
 The simplest safe payload is compact JSON produced with `ensure_ascii=True` and
 `allow_nan=False`, with `<`, `>`, and `&` escaped as JSON Unicode escapes before
 insertion into a fixed `<script type="application/json">` raw-text element. Escaping
@@ -90,7 +94,9 @@ extensions. The [viewer accessibility](viewer-accessibility.md) and
 
 The generic view must expose all canonical information even when a specialized
 visualization is absent; owner-associated metadata may remain labeled plaintext
-key/value records. The confirmed interaction is split between
+key/value records. An always-visible selected-event facts region inventories all and
+only the selected event's canonically owned fields and explicit absences; it never copies
+descendant facts into a parent. The confirmed interaction is split between
 [event-tree selection](event-selection.md) and the
 [SSA-column viewer](interactive-trace-viewer.md). Both consume the same payload and may
 group presentation without changing facts.

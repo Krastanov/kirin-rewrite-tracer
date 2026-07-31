@@ -10,8 +10,8 @@
   API changes.
 
 SYS-011 requires the detector to use a documented surface shared by Python 3.10, the
-pinned Kirin revision's declared floor, and Python 3.13. This is a dependency constraint,
-not a claim that every Python implementation or minor version has been verified.
+pinned Kirin revision's declared floor, and Python 3.13. V1 supports CPython
+`>=3.10,<3.14`; it makes no claim for another implementation or minor version.
 
 ## Options considered
 
@@ -60,9 +60,9 @@ detector's source-location prohibition.
 
 ## Evidence discipline
 
-Initial execution tests use the available CPython 3.13.11 environment. Label them as
-single-environment evidence, not a 3.13 product pin or evidence for unexecuted versions.
-The exact interpreter/version support range remains a separate decision.
+Source and installed-distribution suites execute on CPython 3.10, 3.11, 3.12, and 3.13.
+Browser verification may use CPython 3.13.11 as its producer runtime, but that does not
+replace the non-browser compatibility matrix or broaden the runtime range.
 
 ## Anchors
 

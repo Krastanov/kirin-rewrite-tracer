@@ -16,10 +16,9 @@ clause; do not paste transient logs.
 - **Pass criterion:** The acceptance authority identifies every supported wrapper and
   leaf occurrence, including the no-op, and determines the correct nearest wrapper and
   relative call position for every nested occurrence.
-- **Status:** blocked
+- **Status:** planned
 - **Evidence:** None
-- **Nonconformance:** The representative acceptance fixture awaits confirmation from the
-  project developer.
+- **Nonconformance:** None
 
 ## SYSV-008 — Verify the uniform ordered event tree
 
@@ -33,7 +32,8 @@ clause; do not paste transient logs.
   and its already-changed run makes every wrapper a no-op. Also invoke multiple roots in
   one trace. Compare the complete event set, uniform fields, snapshots, identifiers,
   parent references, and sibling ordinals with the fixture and entry log.
-- **Environment / configuration:** Local Python test process using Kirin commit
+- **Environment / configuration:** CPython 3.10 through 3.13 source and
+  installed-distribution test processes using Kirin commit
   `7cdc2e02ab7ef0b3f80aaa88f930ff34015d240a`, Rich 15.0.0, the SYS-002 printer
   configuration, and one non-nested trace in a process that remains single-threaded
   within the complete SYS-002 support envelope.
@@ -44,10 +44,9 @@ clause; do not paste transient logs.
   nearest enclosing event; and ordinals are distinct within each parent group and
   strictly reproduce entry order, including for parentless roots and repeated concrete
   types.
-- **Status:** blocked
+- **Status:** planned
 - **Evidence:** None
-- **Nonconformance:** Snapshot-comparison semantics await confirmation from the project
-  developer.
+- **Nonconformance:** None
 
 ## ACC-004 — Demonstrate incomplete rewrite inspection
 
@@ -82,9 +81,8 @@ clause; do not paste transient logs.
   rewrite that explicitly returns `None`, a selected composite mutation that completes a
   nested selected operation before raising, and an exception raised outside every public
   rewrite frame. Compare equivalent traced and untraced executions.
-- **Environment / configuration:** Isolated single-threaded CPython 3.13.11 processes
-  using the SYS-002 revisions and configuration. This is initial single-environment
-  evidence, not a product runtime pin.
+- **Environment / configuration:** Isolated single-threaded CPython 3.10 through 3.13
+  processes using the SYS-002 revisions and configuration.
 - **Pass criterion:** Each public frame whose profile return does not carry a
   `RewriteResult` is retained as neutrally `incomplete`, with its entry-time ID, parent,
   ordinal, invocation stack, root, before state, and no after or synthetic failure

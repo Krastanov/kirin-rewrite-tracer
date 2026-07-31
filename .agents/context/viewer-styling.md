@@ -101,7 +101,8 @@ leading event hierarchy and all consecutive SSA columns in one horizontal scroll
 rather than inventing a responsive stack that destroys adjacency. At 200% Chrome page
 zoom, scrolling—not reflow or truncation—preserves every column and control. The
 supported floor is a measured `640 × 480` CSS viewport; verify both it and `1280 × 800`
-at 100% and 200% page zoom.
+at 100% and 200% page zoom, and analyze the monotonic no-wrap invariant over varied
+larger viewports. A viewport below either floor dimension has no v1 presentation claim.
 
 Keep overlay collision handling equally small: size the one active region to at most
 `min(36rem, calc(100vw - 1rem))` by

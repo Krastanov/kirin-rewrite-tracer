@@ -1,16 +1,17 @@
 # Viewer Keyboard and Focus Requirements
 
-V1 uses native document controls rather than a custom ARIA tree, grid, or dialog. This
-keeps focus and activation behavior small while exposing the retained hierarchy and
-interaction state to assistive technology.
+V1 uses native document controls, not a custom ARIA tree, grid, or dialog.
 
 ## SYS-023 — Operate the viewer by keyboard and preserve focus
 
 - **Normative statement:** The event hierarchy shall render as nested ordered lists of
   native event-row buttons in displayed depth-first order, without `tree`, `treegrid`,
   or custom roving-focus roles. A first-focus skip link shall move keyboard focus past
-  the event hierarchy to the labelled SSA workspace. `Tab` and `Shift+Tab` shall follow
-  the visible native-control order. Merely focusing an event row shall change neither
+  the event hierarchy to the labelled SSA workspace. An always-available native
+  `Clear selection` button shall remain in sequential focus order, identify its action
+  accessibly, invoke SYS-020 exactly once through native activation, and retain focus
+  after clearing. `Tab` and `Shift+Tab` shall follow the visible native-control order.
+  Merely focusing an event row shall change neither
   selection nor range anchor. `Enter` or `Space` on an event row shall perform the same
   plain selection transition as its primary click, while Shift combined with either
   key shall perform the same Shift-range transition; Ctrl and Meta shall retain the
@@ -66,6 +67,9 @@ interaction state to assistive technology.
   into view if necessary; the resulting scroll shall cause no second transition.
   Selection-driven column removal shall leave focus on the activating event row or its
   surviving coarse ancestor, never on a detached occurrence.
+  The selected-event facts display shall be a labelled region whose no-selection state
+  and canonical field labels remain exposed to assistive technology without creating
+  copies of descendant-owned facts.
 - **Parents:** STK-001, STK-002, STK-003, STK-004, STK-005
 - **Acceptance criterion:** Given an asymmetric depth-three event hierarchy and the
   SYSV-020 fixtures, the document exposes nested lists and native buttons but no custom
@@ -99,9 +103,9 @@ interaction state to assistive technology.
   clears. Enter/Space promotes pointer- or fallback-focused occurrences; Tab departure
   does not. Column removal, same-key control replacement, and both single/shared
   role-tuple transitions discard affected active and suspended candidates, and reversal
-  or recreation revives none.
+  or recreation revives none. Clear is reachable and natively activatable in every
+  selection state, clears exactly once, retains focus on itself, announces the
+  zero-selection schema, and leaves the labelled facts region in its explicit
+  no-selection state.
 - **Verification:** SYSV-023 (test)
-- **Origin / risk:** Developer authorization and selected design, 2026-07-30; native
-  controls avoid a second composite-widget state machine, while explicit focus fallback
-  prevents selected-parent hiding from detaching keyboard focus.
 - **Context:** [Viewer accessibility options](../../context/viewer-accessibility.md)

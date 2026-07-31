@@ -1,8 +1,7 @@
 # SSA Metadata Viewer Verification
 
 Use asymmetric browser fixtures with independent snapshot, occurrence, metadata,
-lifecycle, and geometry oracles. The action remains blocked until the viewer and test
-exist.
+lifecycle, and geometry oracles.
 
 ## SYSV-022 — Verify SSA-value metadata suffixes and click overlays
 
@@ -78,6 +77,6 @@ exist.
   presenting the new workspace even though content, entity, and occurrence are equal.
   This occurs without another dismissal input. Neither the immediate nor a later reverse
   transition migrates or reopens the overlay.
-- **Status:** blocked
+- **Status:** planned
 - **Evidence:** None
-- **Nonconformance:** No viewer implementation or durable test exists.
+- **Nonconformance:** None

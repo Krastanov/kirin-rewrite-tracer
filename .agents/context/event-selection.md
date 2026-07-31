@@ -27,12 +27,16 @@ frontier event.
 | Shift-click `T` with anchor `A` | Inclusive `A..T` interval in pre-action visible order, normalized for parent dominance | Retain `A`, or rebase it to its surviving selected ancestor |
 | Ctrl/Meta-click | Same as plain click unless Shift is also held | Same as the corresponding plain or Shift action |
 | Pointer movement or drag without click | Unchanged | Unchanged |
+| Native Clear selection | Empty | Null |
 
 A plain click is replacement, not a toggle: clicking the selected singleton keeps it
 selected, while clicking one member of a larger frontier collapses to that member.
 Repeated Shift-clicks retain the current anchor and replace rather than union with the
 previous range. Ctrl and Meta do not alter the plain-versus-Shift choice; Shift still
 selects the range when either is also held.
+Clear is always available and is the explicit route back to zero selection. It restores
+all rows and removes every column, hover, overlay, and descendant-derived state while
+leaving focus on its native button. It does not change the non-toggle row rule.
 
 For Shift, snapshot all rendered event rows immediately before the action, take the
 inclusive interval regardless of direction, then remove every candidate with another

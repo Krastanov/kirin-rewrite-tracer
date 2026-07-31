@@ -6,9 +6,6 @@
 - **Acceptance authority:** Project developer.
 - **Last reviewed:** 2026-07-30
 
-This profile is a repository-specific specification and evidence map. It is not a claim
-of compliance with NASA, FDA, ECSS, or V-Modell XT.
-
 ## Left-side specification
 
 1. [Stakeholder outcomes](01-stakeholder-outcomes.md)
@@ -43,10 +40,10 @@ of compliance with NASA, FDA, ECSS, or V-Modell XT.
   Activation fails without replacing an installed profile function, every supported
   normal or exceptional exit restores an initially empty slot, and replacement during
   the context is an undetected input-assumption violation.
-- Round 7 rejects a CPython 3.13 product pin. Detection uses only the documented
+- Round 7 rejects a CPython 3.13-only product pin. Detection uses only the documented
   Python 3.10/3.13 intersection, excluding bytecode, private frame state, newer
-  monitoring, concrete frame-local assumptions, and minor-version branches. CPython
-  3.13.11 results remain single-environment evidence.
+  monitoring, concrete frame-local assumptions, and minor-version branches. The
+  supported runtime range is CPython `>=3.10,<3.14`.
 - Round 8 confirms partial-but-exact provenance: stable object identity plus four pinned
   mutation APIs, entity-owned rendered intervals, and structured invocation stacks.
   Unrelated entities remain unmatched; no similarity heuristic or confidence score is
@@ -61,22 +58,25 @@ of compliance with NASA, FDA, ECSS, or V-Modell XT.
   dual-role handoffs and edge-scoped provenance, deterministic metadata disclosure, and
   one fixed dark semantic cascade. The inert artifact needs no producer, sidecar,
   server, or page request.
-- The profile remains draft pending other callable forms, general state comparison,
-  runtime range, failure semantics, and lower-layer contracts.
-- Profile-slot ownership is normative. Frame filtering, package topology, concrete DTOs,
-  and canonical trace persistence/import remain non-normative design recommendations.
-- Unresolved intent remains explicit and does not form part of a baseline.
+- Round 23 baselines the one-shot recorder lifecycle, atomic invalidation, dependency
+  provenance preflight, five-descriptor transaction, deeply immutable canonical trace,
+  normalized snapshot equality, pinned owner-aware capture, no-overwrite atomic export,
+  native Clear selection, selected-event canonical facts, and the explicit `640 × 480`
+  presentation floor. Observable unsupported callable execution invalidates the session;
+  unobservable descriptors and deferred callables never executed remain v1 input
+  assumptions.
+- The profile remains draft while implementation and developer acceptance evidence are
+  pending; the v1 behavior, compatibility range, failure semantics, and lower-layer
+  contracts are baselined.
+- Package topology, concrete DTOs, and canonical trace persistence/import remain
+  non-normative.
 
 ## Discovery topics not yet specified
 
-These proposed increments and decisions remain non-normative:
-
-- Treatment and detectability of nonordinary `rewrite` callables, including generator,
-  coroutine, C-level, and custom-descriptor forms.
-- Exact supported Python implementation/version range and multi-environment execution
-  evidence.
+- Detection or support for C/custom rewrite descriptors that produce no classifiable
+  Python frame, and rejection of deferred rewrite callables before they execute.
 - Additional browser engines/platforms, themes, custom search/filter, graphical
   provenance, mobile/touch layout, printing, and UI-state persistence are post-v1.
 - Kirin `SourceInfo`, broader deletion, detach, and mutation-operation coverage,
   stack-path redaction, and persistence round-trip behavior.
-- The exact unsupported-use failure signal, timing, and partial-trace behavior.
+- Broader runtime implementations or versions outside CPython `>=3.10,<3.14`.

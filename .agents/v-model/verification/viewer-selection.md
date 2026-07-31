@@ -1,7 +1,7 @@
 # Event Selection and SSA Column Verification
 
 Use asymmetric browser fixtures with independent tree, snapshot, and interaction-state
-oracles. This action remains blocked until the viewer and test exist.
+oracles.
 
 ## SYSV-020 — Verify event-tree selection and SSA columns
 
@@ -26,6 +26,11 @@ oracles. This action remains blocked until the viewer and test exist.
   rendered rows with an oracle that snapshots pre-action visible order, takes the
   inclusive anchor-target interval, normalizes parent dominance, and updates visibility
   only afterward.
+  From singleton, multi-event, selected-parent, and already-clear states, activate the
+  always-available native Clear button. Before each Clear, open descendant metadata and
+  provenance state where possible; afterward record frontier, anchor, rows, columns,
+  facts region, overlays, highlights, and the focused control. Select another row after
+  Clear to verify the anchor restarted null.
   With child metadata and provenance detail active, select its parent; inventory rows
   and pointer, keyboard, selection, and accessibility targets; and look for an
   independent descendant-disclosure control. Exclude the parent through a subsequent
@@ -71,7 +76,11 @@ oracles. This action remains blocked until the viewer and test exist.
   normalization and event-level-only differences do not block sharing. The no-op middle
   event retains two distinct two-role handoff columns. An absent predecessor after-state
   never shares, while an incomplete successor's existing before-state may share with an
-  equal predecessor after-state.
-- **Status:** blocked
+  equal predecessor after-state. Every Clear produces an empty frontier and null anchor,
+  restores every row in original order, removes all derived state, leaves the explicit
+  no-selection facts state, and retains focus on Clear; repeated Clear is idempotent.
+  The next row activation selects normally and event rows retain their non-toggle
+  behavior.
+- **Status:** planned
 - **Evidence:** None
-- **Nonconformance:** No viewer implementation or durable test exists.
+- **Nonconformance:** None

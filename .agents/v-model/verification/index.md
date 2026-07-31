@@ -3,9 +3,28 @@
 Mark an action `passing` only when durable evidence exercises every pass-criterion
 clause; do not paste transient logs.
 
-Initial detector tests may execute only on CPython 3.13.11. Such results are
-single-environment evidence and do not establish the product's still-unresolved
-interpreter and version support range.
+Non-browser source and installed-distribution verification covers CPython 3.10, 3.11,
+3.12, and 3.13. Browser verification uses CPython 3.13.11 only as the producer runtime
+and does not broaden the pinned browser claim.
+
+## Approved v1 acceptance fixtures
+
+The project developer approved these five deterministic fixtures on 2026-07-30:
+
+1. `ACC-001` combines structural, style-distinct, and metadata-only rewrites with
+   independent state, owner, and printer oracles.
+2. `ACC-002` uses the independently logged 15-event
+   `Fixpoint(Walk(Chain(changing, no-op)))` hierarchy plus its already-changed no-op run.
+3. `ACC-003` combines identity, replacement, retargeting, copying, cloning, deletion,
+   transient, and visually similar unrelated entities with independent call paths.
+4. `ACC-004` uses a child that completes selected mutations and deletion before raising,
+   a catching complete parent, and the corresponding propagated-incomplete branch.
+5. `ACC-005` exports approved empty, complete, and aggregate-incomplete traces and
+   exercises selection, Clear, exact handoffs, provenance, facts, metadata, focus, and
+   fixed presentation in the pinned offline browser.
+
+Automated evidence may implement these demonstrations, but project-developer acceptance
+remains pending until the developer performs or reviews them.
 
 Actions are split by retrieval topic:
 
@@ -32,4 +51,9 @@ Actions are split by retrieval topic:
 - [Viewer keyboard and focus](viewer-accessibility.md) — native-control keyboard
   parity, focus fallback, accessible descriptions, and modality arbitration.
 - [Viewer styling](viewer-styling.md) — exact dark tokens, non-color cues, contrast,
-  consecutive layout, and cascade inspection.
+  consecutive layout, cascade inspection, and the universal large-viewport analysis.
+- [Subsystem integration contracts](integration-contracts.md) — lifecycle,
+  compatibility, immutable storage, capture, mutation, export, projection, and
+  accessibility boundary tests.
+- [Component contracts](component-contracts.md) — focused ID/freeze, normalization,
+  printing, profiler, delegation, stack, index, encoding, and reducer tests.
