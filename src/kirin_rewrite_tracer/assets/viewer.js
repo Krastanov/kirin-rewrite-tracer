@@ -481,7 +481,9 @@ function appendEventBranch(parentId, list, depth) {
 
 function renderRun(run) {
   const span = document.createElement("span");
+  span.className = "captured-run";
   span.textContent = run.text;
+  span.dataset.styleId = run.style_id === null ? "" : run.style_id;
   if (run.occurrence_ids.length > 0) {
     span.dataset.occurrenceIds = run.occurrence_ids.join(" ");
   }

@@ -75,8 +75,13 @@ the oracle. Screenshots may diagnose failures but are not golden evidence.
   `640 × 479` are labelled below the support floor and establish no compatibility
   result. No theme, animation, custom search/filter, graphical
   provenance, mobile/touch layout, print view, or UI-persistence control exists.
-- **Status:** planned
-- **Evidence:** None
+- **Status:** implemented
+- **Evidence:** `test/test_viewer_styling.py`;
+  `test/test_viewer_styling_browser.py::test_all_rich_palette_classes_compute_from_one_inert_cascade`;
+  `test/test_viewer_styling_browser.py::test_fixed_tokens_contrast_selection_suffix_and_focus_cascade`;
+  `test/test_viewer_styling_browser.py::test_focused_related_occurrence_keeps_captured_style_and_both_cues`;
+  `test/test_viewer_styling_browser.py::test_fixed_surface_moat_isolates_exact_and_near_provenance_backgrounds`;
+  `test/test_viewer_styling_browser.py::test_supported_fixture_zoom_no_wrap_layout_matrix_and_floor_exclusions`
 - **Nonconformance:** None
 
 ## SYSV-025 — Analyze the universal large-viewport layout invariant
@@ -104,6 +109,12 @@ the oracle. Screenshots may diagnose failures but are not golden evidence.
   controls, unwrapped SSA text, and horizontal reachability at both zoom levels. A
   counterexample invalidates the universal claim; results below 640 pixels wide or 480
   pixels high are explicitly excluded rather than passed.
-- **Status:** planned
-- **Evidence:** None
-- **Nonconformance:** None
+- **Status:** failing
+- **Evidence:** [Large-viewport analysis and counterexample](../evidence/sysv-025-layout-invariant.md);
+  `test/test_sysv_025_layout_analysis.py::test_sysv_025_analysis_records_complete_inventory_and_counterexample`;
+  `test/test_viewer_styling_browser.py::test_blink_extent_cap_is_a_reproducible_universal_layout_counterexample`;
+  `test/test_viewer_styling_browser.py::test_supported_fixture_zoom_no_wrap_layout_matrix_and_floor_exclusions`
+- **Nonconformance:** Valid unbounded snapshot text can exceed pinned Blink's layout
+  extent. At 100% and 200% zoom the measured scroller caps at `33,554,432` and
+  `16,777,216` CSS pixels respectively, leaving a later nonzero control unreachable;
+  splitting the text across 400 render runs does not remove the cap.

@@ -356,7 +356,13 @@ def test_coarse_parent_provenance_is_exact_bidirectional_and_owner_scoped(
     related_target = driver.find_element(
         By.CSS_SELECTOR, '.ssa-occurrence[data-provenance-related="true"]'
     )
-    assert "rgb(251, 191, 36)" in related_target.value_of_css_property("box-shadow")
+    assert "rgb(251, 191, 36)" in cast(
+        str,
+        driver.execute_script(
+            "return getComputedStyle(arguments[0], '::after').boxShadow;",
+            related_target,
+        ),
+    )
     _end_hover(driver)
 
     _hover(driver, 1, entities["merge_destination"])

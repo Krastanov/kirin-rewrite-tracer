@@ -18,6 +18,7 @@ from ._model import (
     Trace,
     TraceEntity,
     TraceValidationError,
+    _style_key,
 )
 
 _DOMAINS = {
@@ -119,7 +120,7 @@ class _TraceBuilder:
         self.operations: list[MutationOperation] = []
         self.relations: list[ProvenanceRelation] = []
         self.effects: list[EntityEffect] = []
-        self._style_keys: dict[tuple[object, ...], str] = {}
+        self._style_keys: dict[object, str] = {}
         self._entity_records: dict[str, TraceEntity] = {}
         self._frozen: Trace | None = None
         self._released = False
@@ -158,25 +159,7 @@ class _TraceBuilder:
             raise TraceValidationError(
                 "a style candidate must not carry a persistent ID"
             )
-        key = (
-            candidate.color,
-            candidate.bgcolor,
-            candidate.bold,
-            candidate.dim,
-            candidate.italic,
-            candidate.underline,
-            candidate.blink,
-            candidate.blink2,
-            candidate.reverse,
-            candidate.conceal,
-            candidate.strike,
-            candidate.underline2,
-            candidate.frame,
-            candidate.encircle,
-            candidate.overline,
-            candidate.link,
-            candidate.meta,
-        )
+        key = _style_key(candidate)
         existing = self._style_keys.get(key)
         if existing is not None:
             return existing

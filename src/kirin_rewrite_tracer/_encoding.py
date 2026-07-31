@@ -32,6 +32,7 @@ from ._model import (
     Trace,
     TraceEntity,
     _snapshot_semantic_key,
+    _style_key,
 )
 
 Primitive: TypeAlias = (
@@ -83,8 +84,9 @@ def generated_style_rules(trace: Trace) -> str:
 
     if type(trace) is not Trace:
         raise TypeError("trace must be an immutable Trace")
+    _, definitions = _project_style_classes(trace)
     return "\n".join(
-        _style_rule(index, style) for index, style in enumerate(trace.styles)
+        _style_rule_for_class(css_class, style) for css_class, style in definitions
     )
 
 
@@ -277,13 +279,7 @@ def _encode_effect(item: EntityEffect) -> PrimitiveObject:
 def _encode_projection(trace: Trace) -> PrimitiveObject:
     index = trace.index()
     semantic_classes: dict[object, str] = {}
-    style_classes: list[Primitive] = [
-        {
-            "style_id": style.id,
-            "css_class": f"{_STYLE_CLASS_PREFIX}{style_index}",
-        }
-        for style_index, style in enumerate(trace.styles)
-    ]
+    style_classes, _ = _project_style_classes(trace)
     snapshots: list[Primitive] = []
     occurrence_text: list[Primitive] = []
     for snapshot in trace.snapshots:
@@ -310,10 +306,32 @@ def _encode_projection(trace: Trace) -> PrimitiveObject:
             for occurrence in occurrences
         )
     return {
-        "styles": style_classes,
+        "styles": cast(list[Primitive], style_classes),
         "snapshots": snapshots,
         "occurrences": occurrence_text,
     }
+
+
+def _project_style_classes(
+    trace: Trace,
+) -> tuple[
+    list[PrimitiveObject],
+    list[tuple[str, StyleRecord]],
+]:
+    """Intern complete typed style tuples without changing canonical records."""
+
+    classes_by_key: dict[object, str] = {}
+    associations: list[PrimitiveObject] = []
+    definitions: list[tuple[str, StyleRecord]] = []
+    for style in trace.styles:
+        key = _style_key(style)
+        css_class = classes_by_key.get(key)
+        if css_class is None:
+            css_class = f"{_STYLE_CLASS_PREFIX}{len(classes_by_key)}"
+            classes_by_key[key] = css_class
+            definitions.append((css_class, style))
+        associations.append({"style_id": style.id, "css_class": css_class})
+    return associations, definitions
 
 
 def _render_runs(
@@ -411,6 +429,10 @@ def _validate_primitive(item: object, active: set[int] | None = None) -> None:
 
 
 def _style_rule(index: int, style: StyleRecord) -> str:
+    return _style_rule_for_class(f"{_STYLE_CLASS_PREFIX}{index}", style)
+
+
+def _style_rule_for_class(css_class: str, style: StyleRecord) -> str:
     foreground = (
         _resolve_color(style.color, foreground=True)
         if style.color is not None
@@ -467,7 +489,7 @@ def _style_rule(index: int, style: StyleRecord) -> str:
     body = ";".join(declarations)
     if body:
         body += ";"
-    return f".{_STYLE_CLASS_PREFIX}{index}{{{body}}}"
+    return f".{css_class}{{{body}}}"
 
 
 def _resolve_color(item: ColorRecord, *, foreground: bool) -> tuple[int, int, int]:

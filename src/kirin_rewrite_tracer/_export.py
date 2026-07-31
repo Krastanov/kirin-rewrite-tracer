@@ -18,6 +18,7 @@ from ._model import Trace
 
 _ASSET_PACKAGE = "kirin_rewrite_tracer.assets"
 _NONCE_PATTERN = re.compile(r"[A-Za-z0-9_-]{16,}")
+_GENERATED_STYLE_MARKER = "/* KRT_GENERATED_RICH_STYLES */"
 
 
 def export_html(trace: Trace, destination: str | os.PathLike[str]) -> Path:
@@ -93,6 +94,7 @@ def _document_bytes(trace: Trace, *, nonce: str | None = None) -> bytes:
     )
     static_css = _read_asset("viewer.css")
     generated_css = generated_style_rules(trace)
+    stylesheet = _compose_stylesheet(static_css, generated_css)
     viewer_js = _read_asset("viewer.js")
     csp = (
         "default-src 'none'; "
@@ -117,7 +119,7 @@ def _document_bytes(trace: Trace, *, nonce: str | None = None) -> bytes:
         '<meta name="viewport" content="width=device-width,initial-scale=1">\n'
         "<title>Kirin rewrite trace</title>\n"
         f'<style nonce="{generated_nonce}">\n'
-        f"{static_css}\n{generated_css}\n"
+        f"{stylesheet}\n"
         "</style>\n"
         "</head>\n"
         "<body>\n"
@@ -155,6 +157,22 @@ def _document_bytes(trace: Trace, *, nonce: str | None = None) -> bytes:
         "</html>\n"
     )
     return document.encode("utf-8")
+
+
+def _compose_stylesheet(static_css: str, generated_css: str) -> str:
+    """Insert generated declarations at the single audited cascade boundary."""
+
+    marker_count = static_css.count(_GENERATED_STYLE_MARKER)
+    if marker_count != 1:
+        raise RuntimeError(
+            "viewer stylesheet must contain exactly one generated-style marker"
+        )
+    replacement = (
+        _GENERATED_STYLE_MARKER
+        if not generated_css
+        else f"{_GENERATED_STYLE_MARKER}\n{generated_css}"
+    )
+    return static_css.replace(_GENERATED_STYLE_MARKER, replacement)
 
 
 def _read_asset(name: str) -> str:
