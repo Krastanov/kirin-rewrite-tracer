@@ -47,6 +47,9 @@ and exposes no partial trace. `TraceRecorder` is one-shot; active trace access r
 The public root exports are `trace_rewrites`, `export_html`, `Trace`,
 `TraceRecorder`, `TraceStateError`, and `UnsupportedTraceError`.
 
+[`EXAMPLES.md`](EXAMPLES.md) works through runnable Kirin and `bloqade-lanes` kernels
+covering the event tree, analysis metadata, provenance, and the failure modes.
+
 ## Supported boundary
 
 - CPython `>=3.10,<3.14`, Rich `15.0.0`, and Kirin commit
