@@ -14,6 +14,10 @@ dependencies = [
 ]
 
 [dependency-groups]
+docs = [
+  "mkdocs>=1.6.1,<2",
+  "mkdocs-material>=9.6,<10",
+]
 dev = [
   "build>=1.3,<2",
   "kirin-toolchain[vmath] @ git+https://github.com/QuEraComputing/kirin.git@7cdc2e02ab7ef0b3f80aaa88f930ff34015d240a",
@@ -31,6 +35,7 @@ allow-direct-references = true
 include = [
   "/.agents",
   "/.github",
+  "/docs",
   "/src",
   "/test",
   "/.gitignore",
@@ -38,7 +43,9 @@ include = [
   "/AGENTS.md",
   "/EXAMPLES.md",
   "/README.md",
+  "/mkdocs.yml",
   "/pyproject.toml",
+  "/scripts",
   "/uv.lock",
 ]
 

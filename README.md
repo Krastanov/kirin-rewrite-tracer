@@ -7,6 +7,11 @@ AI Slop Warning! No human has reviewed this code or even read through the v mode
 `kirin-rewrite-tracer` records Kirin rewrite calls as a deeply immutable trace and
 exports that trace as one autonomous, inert HTML viewer.
 
+The [documentation](https://krastanov.github.io/kirin-rewrite-tracer/) includes a
+compact API reference and live visualizations for the worked examples.
+Its strict build executes the canonical `EXAMPLES.md` programs and regenerates every
+available visualization.
+
 ## Use
 
 Install the locked development environment with `uv sync --python 3.13`, then:
@@ -108,6 +113,7 @@ uv run ruff check .
 uv run ruff format --check .
 uv run mypy src test
 uv run pre-commit run --all-files
+uv run --frozen --no-default-groups --group docs mkdocs build --strict
 uv build
 ```
 
