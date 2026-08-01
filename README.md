@@ -58,8 +58,11 @@ covering the event tree, analysis metadata, provenance, and the failure modes.
   five pinned Kirin mutation descriptors.
 - During capture, traced code must not replace the active profile callback or descriptors
   or behaviorally inspect tracer-added frames/wrappers.
-- Ordinary synchronous Python public rewrite entries. Executed generators, coroutines,
-  async generators, cross-instance specialized dispatch, and selected-mutator bypasses
+- Ordinary synchronous Python public rewrite entries. A specialized `rewrite_Region`,
+  `rewrite_Block`, or `rewrite_Statement` handler invoked on a different rule instance
+  records its own nested event owned by that rule; on the same instance it is internal
+  dispatch and records nothing. Executed generators, coroutines, async generators, a
+  specialized handler invoked while no rewrite is open, and selected-mutator bypasses
   are unsupported.
 - Snapshot, printer, and invoked metadata-representation hooks must terminate, remain
   IR-pure, and not perform public rewrites, specialized dispatch, or selected mutations.

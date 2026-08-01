@@ -107,15 +107,19 @@ tree also contains direct `rewrite` owners:
 `CFGCompactify` inherits base dispatch but constructs `CompactifyRegion` dynamically, so
 it is a useful nested-support fixture. `ScfToCfRule` directly calls another rule
 instance's specialized `rewrite_Statement` instead of its public `rewrite()` entry
-point. V1 rejects that cross-instance bypass rather than presenting the outer event as a
-complete account of its owned activity.
+point. V1 originally rejected that crossing rather than present the outer event as a
+complete account of its owned activity. It now opens a nested event owned by the
+delegated rule, satisfying the same concern by attribution instead of refusal: the
+sub-rule owns its activity and mutations, and the outer event stays honest. Refusal is
+retained only where no invocation is open, leaving no parent to attribute to.
 
 The confirmed frame-shaped category naturally covers ordinary third-party direct
 overrides, including one created after context entry, a pre-bound method, and an unbound
 class-function call. A profile callback can watch plain synchronous Python specialized
 `rewrite_Region`, `rewrite_Block`, and `rewrite_Statement` frames: a handler is internal
-only when its `self` matches the innermost active public frame, while any other `self`
-fails before it hides owned child activity. The compatibility adapter should keep these
+only when its `self` is identical to the innermost open invocation's rule; any other
+`self` opens its own nested event rather than hiding owned child activity, so
+equal-but-distinct rules still nest. The compatibility adapter should keep these
 checks in one pinned module rather than scatter rule-specific branches through the event
 model. Runtime types and return values, not optional annotations, determine
 compatibility.

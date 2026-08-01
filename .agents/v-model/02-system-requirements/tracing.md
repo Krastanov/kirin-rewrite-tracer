@@ -38,7 +38,7 @@ snapshot comparison are confirmed. This comparison is not a general IR diff.
 
 ## SYS-008 — Record supported normal rewrite invocations uniformly
 
-- **Normative statement:** For each otherwise-supported public rewrite invocation
+- **Normative statement:** For each otherwise-supported recorded invocation
   detected under SYS-010 whose profile return carries a `RewriteResult`, the product
   shall retain exactly one event, whether the concrete rule is an orchestration wrapper
   or leaf and regardless of its returned `RewriteResult.has_done_something` value. The
@@ -78,7 +78,7 @@ snapshot comparison are confirmed. This comparison is not a general IR diff.
 
 ## SYS-015 — Retain incomplete rewrite events and completed provenance
 
-- **Normative statement:** When an otherwise-supported public rewrite frame detected
+- **Normative statement:** When an otherwise-supported recorded rewrite frame detected
   under SYS-010 exits without a `RewriteResult`, the product shall retain its event with
   completion state
   `incomplete`, its pre-call root and before snapshot, its SYS-009 hierarchy fields, its
@@ -88,11 +88,11 @@ snapshot comparison are confirmed. This comparison is not a general IR diff.
   failure snapshot for that event and shall mark the aggregate trace incomplete. A
   normally returning ancestor that catches such an exit shall complete under SYS-008;
   the incomplete descendant shall remain under its original parent. When the exit
-  propagates through multiple recorded public frames, each exiting frame shall be
+  propagates through multiple recorded rewrite frames, each exiting frame shall be
   incomplete. The product
   shall not claim whether the neutral exit was caused by an exception or an explicit
   non-`RewriteResult` return, shall not create an event for an exception outside a
-  supported public rewrite frame, and shall not roll back, copy to an ancestor, or
+  supported recorded rewrite frame, and shall not roll back, copy to an ancestor, or
   reassign a retained mutation operation. Tracing shall not replace or suppress the
   original return or exception and shall preserve final IR as required by SYS-003.
 - **Parents:** STK-004
@@ -105,7 +105,7 @@ snapshot comparison are confirmed. This comparison is not a general IR diff.
   retain after states; incomplete events do not. Every trace containing an incomplete
   event is marked incomplete, and traced behavior matches the untraced fixtures.
   Only the presence of an incomplete event makes aggregate event-derived completeness
-  incomplete; an exception outside every supported public frame creates no event and
+  incomplete; an exception outside every supported recorded frame creates no event and
   does not by itself change aggregate completeness.
 - **Verification:** SYSV-015 (test)
 - **Origin / risk:** Developer confirmation and generic-profile investigation,

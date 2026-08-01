@@ -20,7 +20,8 @@
 - **Method:** test
 - **Procedure:** On CPython 3.10–3.13, vary runtime, Rich, PEP 610/clean-Git Kirin proof,
   revision/dirtiness, profile, nesting, and each raw descriptor. Execute every observable
-  malformed, bypass, deferred-body, and unrepresentable path; leave assumption cases
+  malformed, unparented-specialized, saved-mutator-bypass, deferred-body, and
+  unrepresentable path; leave assumption cases
   unexecuted/unobservable.
 - **Environment / configuration:** Source and installed distributions with controlled
   dependencies, Git metadata, descriptors, and profile slot.

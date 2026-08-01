@@ -74,7 +74,7 @@ This violates:
 
 - SYSV-004: an observable malformed public frame is silently omitted;
 - INTV-002: an observable unsupported path does not invalidate; and
-- UNITV-004: wrong receiver input does not cause sticky invalidation.
+- UNITV-004: an invalid non-`RewriteRule` receiver does not cause sticky invalidation.
 
 Those actions are `failing`. SYSV-010 still passes its valid-entry procedure, while
 SYS-010 is not fully conforming because it also maps to failing SYSV-004.

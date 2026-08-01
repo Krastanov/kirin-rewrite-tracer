@@ -89,9 +89,9 @@
 - **Method:** test
 - **Procedure:** Exercise all declared unsupported rules, configurations,
   representation/style-meta values, and output paths, including unformable type labels,
-  both text paths failing, an occupied profile, and an unsupported child. Run synthetic
-  and pinned `ScfToCfRule` cross-instance specialized bypasses on valid printable
-  `For`/`IfElse` nodes; keep hostile representation values outside root rendering.
+  both text paths failing, an occupied profile, and an unsupported child. Run a
+  specialized handler observed while no recorded invocation is open; keep hostile
+  representation values outside root rendering.
   Verify trace/export denial, caught-normal and later-exception identity, malformed
   public frames, and resumed generator/coroutine/async-generator bodies. Construct but
   do not execute equivalent deferred callables.
@@ -120,7 +120,14 @@
   Exercise the pinned `Walk`, `Fixpoint`, `Chain`, `CompactifyRegion`, aggressive
   `Fold`, and `WalkDesugarBinop` deterministic fixtures with inherited sentinels as
   defined by the Kirin integration reference. Verify same-instance specialized dispatch
-  through base `rewrite()` creates no handler event and classify from runtime frames and
+  through base `rewrite()` creates no handler event. Verify that the pinned `ScfToCfRule`
+  delegation to `ForRule` and `IfElseRule` on printable `For` and `IfElse` nodes, a
+  synthetic delegation whose two rules compare equal but are not identical, and a
+  delegation nested under an already-promoted handler each add exactly one correctly
+  parented child event carrying the delegated rule's own concrete type; that a promoted
+  handler owns the mutation operations it performs; that same-instance dispatch inside a
+  promoted handler still creates no event; and that a specialized handler observed with
+  no open invocation refuses. Classify from runtime frames and
   values, never annotations.
 - **Environment / configuration:** Isolated CPython 3.10 through 3.13 test processes that
   remain single-threaded, using the SYS-002 revisions and configuration. The vmath case
@@ -129,7 +136,10 @@
   the tracer later declares an equivalent pinned test dependency.
 - **Pass criterion:** Every logged public rewrite frame creates exactly one event with
   the correct concrete rule type and dynamic parent, including both frames in the
-  superclass-delegation case; no specialized-handler frame creates an event; every call
+  superclass-delegation case; no same-instance specialized-handler frame creates an
+  event, while each cross-instance specialized-handler frame creates exactly one event
+  with its own concrete rule type under the innermost open invocation and owns its
+  mutation operations; every call
   returns normally with the expected `RewriteResult` runtime type and fields; and no
   other event appears.
 - **Status:** passing

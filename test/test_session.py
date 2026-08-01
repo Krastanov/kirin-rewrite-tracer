@@ -82,6 +82,21 @@ class _GeneratorRule(RewriteRule):
         yield RewriteResult()
 
 
+@dataclass
+class _NestedGeneratorRule(RewriteRule):
+    """Open a real public event, then invalidate from a nested generator body.
+
+    The outer frame owns a live event shell holding the rule and the root, so
+    releasing them stays observable after the inner refusal.
+    """
+
+    child: _GeneratorRule
+
+    def rewrite(self, node: IRNode[Any]) -> RewriteResult:
+        next(self.child.rewrite(node))
+        return RewriteResult()
+
+
 class _CoroutineRule(RewriteRule):
     async def rewrite(  # type: ignore[override]
         self, node: IRNode[Any]
@@ -272,6 +287,64 @@ class _EqualLeaf(_NoOpRule):
 
     def __hash__(self) -> int:
         return id(self)
+
+
+class _SelfDispatchingLeaf(RewriteRule):
+    """Delegate to its own specialized handler once promoted."""
+
+    def rewrite_Statement(self, node: Statement) -> RewriteResult:
+        block = Block()
+        return self.rewrite_Block(block)
+
+    def rewrite_Block(self, node: Block) -> RewriteResult:
+        return RewriteResult()
+
+
+@dataclass
+class _BlockDelegatingLeaf(RewriteRule):
+    child: RewriteRule
+
+    def rewrite_Statement(self, node: Statement) -> RewriteResult:
+        return self.child.rewrite_Block(Block())
+
+
+@dataclass
+class _RecursiveDelegator(RewriteRule):
+    """Bounce between two instances until ``depth`` calls have been made."""
+
+    depth: int
+    partner: _RecursiveDelegator | None = None
+
+    def rewrite(self, node: IRNode[Any]) -> RewriteResult:
+        assert isinstance(node, Statement)
+        return self.rewrite_Statement(node)
+
+    def rewrite_Statement(self, node: Statement) -> RewriteResult:
+        if self.depth <= 0 or self.partner is None:
+            return RewriteResult()
+        self.partner.depth = self.depth - 1
+        return self.partner.rewrite_Statement(node)
+
+
+class _NonResultLeaf(RewriteRule):
+    def rewrite_Statement(self, node: Statement) -> RewriteResult:
+        return cast(RewriteResult, None)
+
+
+class _RaisingLeaf(RewriteRule):
+    def rewrite_Statement(self, node: Statement) -> RewriteResult:
+        raise RuntimeError("leaf failure")
+
+
+@dataclass
+class _CatchingDelegator(RewriteRule):
+    child: RewriteRule
+
+    def rewrite(self, node: IRNode[Any]) -> RewriteResult:
+        assert isinstance(node, Statement)
+        with suppress(RuntimeError):
+            self.child.rewrite_Statement(node)
+        return RewriteResult()
 
 
 class _UnrelatedRewriter:
@@ -572,34 +645,123 @@ def test_completed_event_releases_invocation_frame_locals_while_still_active() -
     assert recorder.trace.complete
 
 
-def test_cross_instance_specialized_dispatch_is_sticky_and_trace_is_denied() -> None:
-    recorder = trace_rewrites()
-    inner: UnsupportedTraceError | None = None
+def test_cross_instance_specialized_dispatch_records_a_nested_event() -> None:
+    with trace_rewrites() as recorder:
+        result = _CrossInstanceRule(_NoOpRule()).rewrite(_PlainStatement())
 
-    with pytest.raises(UnsupportedTraceError) as outer, recorder:
-        try:
-            _CrossInstanceRule(_NoOpRule()).rewrite(_PlainStatement())
-        except UnsupportedTraceError as caught:
-            inner = caught
+    assert result == RewriteResult()
+    trace = recorder.trace
+    assert trace.complete
+    assert [event.rule_type.rsplit(".", 1)[-1] for event in trace.events] == [
+        "_CrossInstanceRule",
+        "_NoOpRule",
+    ]
+    assert [(event.parent_id, event.sibling_ordinal) for event in trace.events] == [
+        (None, 0),
+        ("event-0", 0),
+    ]
+    assert all(event.completion == "complete" for event in trace.events)
+    assert len(trace.snapshots) == 4
 
-    assert inner is outer.value
-    assert isinstance(outer.value, UnsupportedTraceError)
-    _assert_invalid_trace(recorder, outer.value)
 
-
-def test_direct_specialized_and_equal_cross_instance_dispatch_invalidate() -> None:
+def test_direct_specialized_dispatch_without_an_open_event_invalidates() -> None:
     direct = trace_rewrites()
     with pytest.raises(UnsupportedTraceError) as direct_error, direct:
         _NoOpRule().rewrite_Statement(_PlainStatement())
     _assert_invalid_trace(direct, direct_error.value)
+    assert "outside a public rewrite event" in direct_error.value.reason
 
+
+def test_equal_but_distinct_rules_still_open_a_nested_event() -> None:
     parent = _EqualDelegator(_EqualLeaf())
     assert parent == parent.child
-    crossed = trace_rewrites()
-    with pytest.raises(UnsupportedTraceError) as crossed_error, crossed:
+    assert parent is not parent.child
+
+    with trace_rewrites() as recorder:
         parent.rewrite(_PlainStatement())
-    _assert_invalid_trace(crossed, crossed_error.value)
-    assert "rule-instance ownership" in crossed_error.value.reason
+
+    trace = recorder.trace
+    assert trace.complete
+    assert [event.rule_type.rsplit(".", 1)[-1] for event in trace.events] == [
+        "_EqualDelegator",
+        "_EqualLeaf",
+    ]
+    assert trace.events[1].parent_id == trace.events[0].id
+
+
+def test_same_instance_dispatch_inside_a_promoted_handler_records_no_event() -> None:
+    with trace_rewrites() as recorder:
+        _CrossInstanceRule(_SelfDispatchingLeaf()).rewrite(_PlainStatement())
+
+    trace = recorder.trace
+    assert trace.complete
+    assert [event.rule_type.rsplit(".", 1)[-1] for event in trace.events] == [
+        "_CrossInstanceRule",
+        "_SelfDispatchingLeaf",
+    ]
+
+
+def test_a_promoted_handler_can_itself_parent_a_promoted_handler() -> None:
+    leaf = _SelfDispatchingLeaf()
+    with trace_rewrites() as recorder:
+        _CrossInstanceRule(_BlockDelegatingLeaf(leaf)).rewrite(_PlainStatement())
+
+    trace = recorder.trace
+    assert trace.complete
+    assert [event.rule_type.rsplit(".", 1)[-1] for event in trace.events] == [
+        "_CrossInstanceRule",
+        "_BlockDelegatingLeaf",
+        "_SelfDispatchingLeaf",
+    ]
+    assert [event.parent_id for event in trace.events] == [
+        None,
+        "event-0",
+        "event-1",
+    ]
+
+
+def test_mutually_recursive_delegation_records_one_event_per_crossing() -> None:
+    first = _RecursiveDelegator(depth=2)
+    second = _RecursiveDelegator(depth=0, partner=first)
+    first.partner = second
+
+    with trace_rewrites() as recorder:
+        first.rewrite(_PlainStatement())
+
+    trace = recorder.trace
+    assert trace.complete
+    assert [event.parent_id for event in trace.events] == [
+        None,
+        "event-0",
+        "event-1",
+    ]
+    assert trace.events[0].rule_type == trace.events[2].rule_type
+    assert recorder.state == "FROZEN"
+
+
+def test_promoted_handler_without_a_result_leaves_both_events_incomplete() -> None:
+    with trace_rewrites() as recorder:
+        _CrossInstanceRule(_NonResultLeaf()).rewrite(_PlainStatement())
+
+    trace = recorder.trace
+    assert not trace.complete
+    assert [event.completion for event in trace.events] == [
+        "incomplete",
+        "incomplete",
+    ]
+    assert all(event.after_snapshot_id is None for event in trace.events)
+    assert all(event.result is None for event in trace.events)
+
+
+def test_raising_promoted_handler_stays_incomplete_under_a_complete_parent() -> None:
+    with trace_rewrites() as recorder:
+        _CatchingDelegator(_RaisingLeaf()).rewrite(_PlainStatement())
+
+    trace = recorder.trace
+    assert not trace.complete
+    assert [event.completion for event in trace.events] == ["complete", "incomplete"]
+    assert trace.events[1].parent_id == trace.events[0].id
+    assert trace.events[1].result is None
 
 
 def test_caught_callback_error_removes_profile_and_exit_reraises_same_object() -> None:
@@ -625,7 +787,7 @@ def test_caught_unsupported_never_replaces_a_later_body_exception() -> None:
 
     with pytest.raises(RuntimeError) as caught_later, recorder:
         try:
-            _CrossInstanceRule(_NoOpRule()).rewrite(_PlainStatement())
+            _NoOpRule().rewrite_Statement(_PlainStatement())
         except UnsupportedTraceError as caught:
             unsupported = caught
         raise later
@@ -964,12 +1126,12 @@ def test_unrelated_rewrite_named_call_is_not_a_public_kirin_frame() -> None:
 
 def _make_terminal_invalid_weakrefs() -> tuple[
     TraceRecorder,
-    weakref.ReferenceType[_CrossInstanceRule],
+    weakref.ReferenceType[_NestedGeneratorRule],
     weakref.ReferenceType[_PlainStatement],
     weakref.ReferenceType[UnsupportedTraceError],
 ]:
     node = _PlainStatement()
-    rule = _CrossInstanceRule(_NoOpRule())
+    rule = _NestedGeneratorRule(_GeneratorRule())
     node_reference = weakref.ref(node)
     rule_reference = weakref.ref(rule)
     recorder = trace_rewrites()

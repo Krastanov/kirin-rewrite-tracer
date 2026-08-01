@@ -25,7 +25,8 @@ These are logical boundaries, not package or file topology.
   descriptors, and exact Kirin commit
   `7cdc2e02ab7ef0b3f80aaa88f930ff34015d240a` proved by PEP 610 VCS provenance or a
   clean exact Git checkout, never fingerprints. Observable malformed public frames,
-  cross-instance specialized dispatch, unauthorized saved-mutator entry, executed
+  specialized dispatch observed with no open recorded invocation, unauthorized
+  saved-mutator entry, executed
   generator/coroutine/async-generator rewrites, and unrepresentable capture invalidate.
   Unexecuted deferred and unobservable C/custom descriptors are input assumptions.
 - **Parents:** SYS-002, SYS-004, SYS-010, SYS-011, SYS-012
