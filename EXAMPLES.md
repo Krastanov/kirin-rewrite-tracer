@@ -6,8 +6,9 @@ works through small kernels where that is not enough, and shows what the recorde
 adds — the orchestration tree, the analysis facts a rule consulted, the exact statements
 that were cloned or deleted, and where a run stopped when it went wrong.
 
-Every snippet below is complete and self-contained; run it and read the printed output,
-then open the exported HTML for the same trace in a browser.
+Every snippet below is a complete program — save it, run it, read the printed output,
+then open the exported HTML for the same trace in a browser. The only shared code is the
+`print_tree` helper defined once below.
 
 ## Setting up
 
