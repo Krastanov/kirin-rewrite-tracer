@@ -11,14 +11,18 @@ the keyboard or accessibility oracle.
 - **Procedure:** Open the empty trace and the asymmetric SYSV-020 through SYSV-022
   fixtures under SYSV-018 in fresh documents, including a nonempty trace before any
   event is selected. Inspect the DOM and browser accessibility tree for the skip link,
-  always-available Clear button, selected-event facts region,
+  always-available Clear button, SYS-026 unchanged-filter toggle, selected-event facts
+  region,
   zero-event or no-selection workspace target, nested event lists, event buttons,
   labelled SSA workspace and column regions, occurrence buttons, selected-state
   descriptions, polite status region, and absence of custom tree/grid roles. Use
   keyboard input only to follow the skip link and to traverse all visible event controls
   with `Tab` and `Shift+Tab`; record focus,
   selection, range anchor, rendered rows, columns, accessibility nodes, and status text
-  after every focus move. On each event fixture, activate representative rows with
+  after every focus move. Verify filter pressed/disabled state, relationship, exact
+  classification and inconsistency descriptions, focus retention, and accessibility
+  removal through the SYSV-027 transitions. On each event fixture, activate
+  representative rows with
   Enter, Space, Shift+Enter, Shift+Space, and the existing Ctrl/Meta combinations, while
   guarding against a native click plus a second custom activation. Exercise separately
   a swallowed target, a swallowed anchor with surviving target, parent exclusion and
@@ -65,7 +69,8 @@ the keyboard or accessibility oracle.
   trace it reaches the explicit zero-event workspace and no event or occurrence button
   exists; in the nonempty no-selection trace it reaches the labelled empty SSA workspace
   without selecting an event or inventing an SSA occurrence. Clear remains a native,
-  accessibly named control in every state, and the selected-event facts region is
+  accessibly named control in every state, the unchanged filter has its exact native
+  state and relationship, and the selected-event facts region is
   labelled and exposes no selected event initially. Event hierarchy is exposed
   through nested lists and native buttons in displayed depth-first order, with no
   `tree`, `treegrid`, or roving focus, and with SYSV-026's collapse button as the only
@@ -73,15 +78,17 @@ the keyboard or accessibility oracle.
   traversal alone changes no selection, anchor, row, or column.
   Enter/Space and their Shift/Ctrl/Meta combinations each produce exactly one transition
   equal to the corresponding SYSV-020 pointer oracle. Row descriptions give the exact
-  event, hierarchy/completion, and selection state. Polite status text uses exactly the
-  SYS-023 zero-, singleton-, or plural-selection field order and values.
+  event, hierarchy/completion/classification, inconsistency, and selection state. Polite
+  status text uses exactly the SYS-023 zero-, singleton-, or plural-selection field order
+  and values.
   A surviving target retains focus; a swallowed target transfers focus to its unique
   selected ancestor; swallowing only the anchor leaves focus on the target. Hidden and
   later-restored descendants have no stale accessibility node, tab stop, selection, or
   focus: while hidden they expose no node or stop, and when restored exactly one button
   and corresponding node reappear unselected in original order without receiving focus.
   Every Clear activates exactly once, empties selection and anchor, restores every row
-  collapse does not hide, removes derived state, retains focus on Clear, announces the
+  neither collapse nor unchanged filtering hides, removes derived state, retains focus
+  on Clear, announces the
   exact zero-selection schema, and leaves the facts region in its no-selection state.
   Every occurrence is one native button in column-major order with exact role, owner,
   and column description; its name equals its exact captured interval, a shared

@@ -106,8 +106,9 @@
 - **Covers:** SUB-007
 - **Method:** test
 - **Procedure:** Apply event/column/provenance/facts reducers to every click, modifier,
-  range, swallow, Clear, equality near-miss, barrier, cardinality, descendant, shared-side,
-  nonneighbor, unmatched, and two-edge fixture.
+  range, swallow, Clear, classification/filter/reconciliation, equality near-miss,
+  barrier, cardinality, descendant, shared-side, nonneighbor, unmatched, and two-edge
+  fixture.
 - **Environment / configuration:** Pure reducers and the pinned offline browser over the
   same immutable canonical fixtures.
 - **Pass criterion:** Every frontier, anchor, row, column, edge, and highlight matches
@@ -124,7 +125,7 @@
 - **Covers:** SUB-008
 - **Method:** test
 - **Procedure:** Inspect native DOM/accessibility order, keyboard/pointer parity, Clear,
-  fallback, overlays, candidates, announcements, computed styles, contrast, and Rich
+  unchanged filtering, fallback, overlays, candidates, announcements, computed styles, contrast, and Rich
   projection at both zooms and boundary/varied larger viewports; label smaller samples
   excluded.
 - **Environment / configuration:** Pinned headed Chrome/Xvfb with accessibility-tree and

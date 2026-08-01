@@ -6,9 +6,10 @@
   metadata disclosure behavior.
 - **Do not open when:** Working only on selection reduction, CSS tokens and layout,
   capture, export encoding, or canonical provenance storage.
-- **Related specification IDs:** SYS-020, SYS-021, SYS-022, SYS-023, SYS-024, SYS-025
-- **Review when:** A viewer control, keyboard mapping, focus transition, accessible
-  description, or input modality changes.
+- **Related specification IDs:** SYS-020, SYS-021, SYS-022, SYS-023, SYS-024, SYS-025,
+  SYS-026
+- **Review when:** A viewer control, keyboard mapping, focus transition, filter,
+  accessible description, or input modality changes.
 
 ## Why native document controls
 
@@ -32,10 +33,18 @@ three deterministic forms: `Selected: 0; hidden: H.`, `Selected: 1; event: E; hi
 H.`, or `Selected: N; first: E1; last: E2; hidden: H.` A first-focus skip link avoids
 forcing a keyboard user through a large event list before reaching the labelled empty or
 populated SSA workspace.
-An always-available native Clear button follows ordinary Tab order, invokes the same
-zero-selection reducer once for pointer or keyboard activation, and retains focus after
-clearing. The canonical selected-event facts display is a labelled region, including its
-explicit no-selection state.
+An always-available native Clear button and the document-local unchanged-filter button
+follow ordinary Tab order, invoke their reducers once for pointer or keyboard
+activation, and retain focus. The filter uses `aria-pressed`, names the event tree with
+`aria-controls`, and is natively disabled when it has no qualifying event. The canonical
+selected-event facts display is a labelled region, including its explicit no-selection
+state.
+
+Every row description includes its derived change classification. An inconsistent row
+also has a visible textual badge and the description states which exact snapshot/result
+signals disagree. Filtered rows use native `hidden` ancestry, leaving neither focus nor
+accessibility nodes, and a filter transition that removes the current row keeps focus on
+the toggle.
 
 Each non-leaf row leads with one native SYS-025 collapse button carrying `aria-expanded`
 and `aria-controls` for its child list, an accessible name naming its action, its event,

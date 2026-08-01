@@ -20,6 +20,9 @@ The system layer is split by retrieval topic:
   handoffs.
 - [Event subtree collapse](viewer-collapse.md) — one selection-subordinate disclosure
   control per non-leaf row, its eligibility rule, and its accessible naming.
+- [Unchanged event classification and filtering](viewer-unchanged-filter.md) — the
+  two-signal classification, mismatch presentation, subtree filter, and selection
+  reconciliation.
 - [Neighboring-column provenance viewer](viewer-provenance.md) — edge-scoped identity
   and exact selected-mutation highlighting.
 - [SSA metadata viewer](metadata-viewer.md) — definition-only SSA-type suffixes and one
@@ -35,7 +38,8 @@ confirmed, as is one self-contained HTML export for complete and incomplete trac
 the first tree-and-column interaction model and its narrow exact-handoff snapshot
 equality. V1's browser target, native-control keyboard model, focus behavior, fixed
 dark cascade, and one collapse control that is enabled only when its subtree holds no
-selected event are also confirmed. The CPython `>=3.10,<3.14` range, normalized snapshot
+selected event are also confirmed, together with the document-local confirmed-unchanged
+subtree filter. The CPython `>=3.10,<3.14` range, normalized snapshot
 comparison, atomic unsupported-use invalidation, no-overwrite export, native Clear
 selection, selected-event canonical facts, and explicit presentation floor are
 baselined in the subsystem and component contracts.

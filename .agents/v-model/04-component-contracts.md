@@ -114,13 +114,17 @@
   next ancestor-free ordered state without mutation, using pre-action rows for Shift and
   later parent dominance. Clear returns empty/null. A separate frozen preorder collapse
   set accepts only non-leaf events, toggles one displayed eligible event per input,
-  returns its input unchanged otherwise, and never alters `(frontier, anchor)`; row
-  visibility is the union of both hiding rules. Columns preserve logical roles,
+  returns its input unchanged otherwise, and never alters `(frontier, anchor)`. One
+  independent boolean unchanged filter classifies events from normalized snapshot
+  semantics and the result flag, hides qualifying event subtrees, reconciles selection
+  by retaining or rebasing the anchor, and leaves collapse state unchanged; row
+  visibility is the union of all three hiding rules. Columns preserve logical roles,
   share exactly equal `A.after`/`B.before`, treat absent after as a barrier, and never
   share own-event states or compose handoffs.
 - **Parents:** SUB-007
 - **Acceptance criterion:** Table-driven click/modifier/range/swallow/restore/Clear,
-  collapse toggle/eligibility/nesting, and complete/incomplete/equality/near-miss cases
+  collapse toggle/eligibility/nesting, classification/filter/reconciliation, and
+  complete/incomplete/equality/near-miss cases
   match immutable expected states.
 - **Verification:** UNITV-009 (test)
 
@@ -130,9 +134,11 @@
   provenance candidate; apply prescribed replacement/dismissal precedence; invalidate
   active/suspended state when control, occurrence, or role tuple disappears. Return
   focus to a surviving anchor only for focused-region removal, preserve newly focused
-  outside controls and Clear focus, and never revive recreated equal state.
+  outside controls, Clear focus, and unchanged-filter focus, and never revive recreated
+  equal state.
 - **Parents:** SUB-007, SUB-008
 - **Acceptance criterion:** Click, Escape, scroll, resize, removal, role transition,
+  filter-driven selection removal,
   candidate arbitration, detached focus, Clear, and recreation sequences yield one
   settled state, exact focus, and no stale state.
 - **Verification:** UNITV-010 (test)

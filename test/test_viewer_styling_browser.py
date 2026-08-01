@@ -673,7 +673,7 @@ def test_all_rich_palette_classes_compute_from_one_inert_cascade(
               deferredControls: Array.from(
                 document.querySelectorAll("button, [role]")
               ).filter(element =>
-                /theme|search|filter|graph|print|persist/i.test(
+                /theme|search|graph|print|persist/i.test(
                   `${element.textContent} ${element.getAttribute("aria-label") || ""}`
                 )
               ).length,

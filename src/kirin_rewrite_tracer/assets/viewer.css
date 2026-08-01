@@ -146,6 +146,12 @@ button {
   white-space: nowrap;
 }
 
+.event-actions {
+  display: flex;
+  flex-flow: row nowrap;
+  gap: 0.5rem;
+}
+
 .event-tree,
 .event-tree ol {
   margin: 0;
@@ -171,6 +177,16 @@ button {
 .event-button {
   inline-size: 100%;
   white-space: nowrap;
+}
+
+.event-inconsistency-badge {
+  margin-inline-start: 0.6rem;
+  padding: 0.1rem 0.3rem;
+  color: var(--text);
+  background: var(--canvas);
+  border: 1px solid var(--border);
+  border-radius: 0.2rem;
+  font-size: 0.8em;
 }
 
 .event-collapse {
@@ -320,7 +336,13 @@ button {
   inset-inline-start: 0.5rem;
 }
 
+:where(li[data-event-classification="unchanged"]) > .event-row > .event-button {
+  color: var(--muted);
+  background: var(--surface);
+}
+
 .event-button[aria-current="true"] {
+  color: var(--text);
   background: var(--selected);
   box-shadow: inset 3px 0 0 var(--selected-marker);
 }
