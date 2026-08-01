@@ -516,30 +516,33 @@ class BrowserHarness:
                 + round((height - measurement.css_height) * zoom_factor),
             )
             self.driver.set_window_rect(width=next_width, height=next_height)
-            self._await_outer_size(next_width, next_height)
+            self._await_content_response(
+                (measurement.css_width, measurement.css_height)
+            )
         measurement = self.viewport()
         raise AssertionError(
             "could not establish requested measured CSS viewport "
             f"{width}x{height}; observed "
-            f"{measurement.css_width}x{measurement.css_height}"
+            f"{measurement.css_width}x{measurement.css_height} inside a "
+            f"{measurement.outer_width}x{measurement.outer_height} window"
         )
 
-    def _await_outer_size(self, width: int, height: int) -> None:
-        """Let a requested outer size land before the next measurement.
+    def _await_content_response(self, previous: tuple[int, int]) -> None:
+        """Let a resize reach the content box before the next measurement.
 
-        A freshly launched window can report its previous size for several
-        milliseconds, which made every convergence step recompute the same target from
-        the same stale reading. Waiting is only an accuracy aid, so a size Chrome
-        declines to grant returns quietly and leaves the exact-match loop in charge.
+        The outer window reports a requested size as soon as it is asked for, so it
+        cannot witness the resize; only the CSS viewport shows that the content box
+        followed. Waiting is an accuracy aid, so a resize the content declines returns
+        quietly and leaves the exact-match loop in charge.
         """
 
         try:
-            WebDriverWait(self.driver, 5, poll_frequency=0.02).until(
+            WebDriverWait(self.driver, 2, poll_frequency=0.02).until(
                 lambda driver: (
                     driver.execute_script(
-                        "return [window.outerWidth, window.outerHeight];"
+                        "return [window.innerWidth, window.innerHeight];"
                     )
-                    == [width, height]
+                    != [previous[0], previous[1]]
                 )
             )
         except TimeoutException:
