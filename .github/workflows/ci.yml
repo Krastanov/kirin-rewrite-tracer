@@ -88,8 +88,30 @@ jobs:
     timeout-minutes: 30
     steps:
       - uses: actions/checkout@v7
-      - name: Keep the browser provision outside the repository
-        run: echo "KRT_CHROME_FOR_TESTING_ROOT=$RUNNER_TEMP/chrome-for-testing" >> "$GITHUB_ENV"
+      - name: Locate and identify the browser provision
+        # The cache key names the pinned browser rather than the file that declares it,
+        # so editing anything else in the harness cannot discard the download.
+        run: |
+          echo "KRT_CHROME_FOR_TESTING_ROOT=$RUNNER_TEMP/chrome-for-testing" >> "$GITHUB_ENV"
+          python3 - <<'PY' >> "$GITHUB_ENV"
+          import hashlib
+          import pathlib
+          import re
+
+          text = pathlib.Path("test/browser_harness.py").read_text(encoding="utf-8")
+          pins = []
+          for name in (
+              "CHROME_VERSION",
+              "CHROME_ARCHIVE_SHA256",
+              "CHROMEDRIVER_ARCHIVE_SHA256",
+          ):
+              found = re.search(rf'^{name}: Final = \(?\s*"([^"]+)"', text, re.M)
+              if found is None:
+                  raise SystemExit(f"{name} is no longer a pinned string literal")
+              pins.append(found.group(1))
+          digest = hashlib.sha256("\0".join(pins).encode()).hexdigest()[:16]
+          print(f"KRT_CHROME_PIN={pins[0]}-{digest}")
+          PY
       - name: Install uv
         uses: astral-sh/setup-uv@v7
         with:
@@ -112,8 +134,7 @@ jobs:
         uses: actions/cache@v6
         with:
           path: ${{ runner.temp }}/chrome-for-testing
-          key: chrome-for-testing-${{ runner.os }}-${{ hashFiles('test/browser_harness.py') }}
-          restore-keys: chrome-for-testing-${{ runner.os }}-
+          key: chrome-for-testing-${{ runner.os }}-${{ env.KRT_CHROME_PIN }}
       - name: Provision and validate the pinned browser
         run: uv run --python 3.13.11 --frozen python .github/scripts/provision_chrome.py
       - name: Browser verification
