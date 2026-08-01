@@ -79,12 +79,13 @@ clause; do not paste transient logs.
   `Statement.delete`, then raise a preconstructed sentinel exception; have its parent
   catch that exception, complete another selected mutation, and return a
   `RewriteResult`. Next, propagate the same child failure through its parent. Also run a
-  rewrite that explicitly returns `None`, a selected composite mutation that completes a
-  nested selected operation before raising, and an exception raised outside every public
-  rewrite frame. Compare equivalent traced and untraced executions.
+  rewrite that explicitly returns `None`, a cross-instance specialized handler that
+  returns `None` and one that raises, a selected composite mutation that completes a
+  nested selected operation before raising, and an exception raised outside every
+  recorded rewrite frame. Compare equivalent traced and untraced executions.
 - **Environment / configuration:** Isolated single-threaded CPython 3.10 through 3.13
   processes using the SYS-002 revisions and configuration.
-- **Pass criterion:** Each public frame whose profile return does not carry a
+- **Pass criterion:** Each recorded frame whose profile return does not carry a
   `RewriteResult` is retained as neutrally `incomplete`, with its entry-time ID, parent,
   ordinal, invocation stack, root, before state, and no after or synthetic failure
   state. In the caught case the parent is complete and the child remains incomplete; in

@@ -68,7 +68,9 @@
   order. If the value is an instance of pinned Kirin `Printable`, the product shall first
   attempt its non-terminal `print_str(end="")` path under the declared printer defaults;
   any returned string, including an empty string, is used exactly without further
-  normalization. If that path is inapplicable, raises an `Exception`, or does not return
+  normalization. That path shall render through an explicitly non-terminal, uncolored
+  console, so the recorded text does not vary with ambient terminal, Jupyter, or
+  color-forcing environment. If that path is inapplicable, raises an `Exception`, or does not return
   a string, any partial output is discarded and the exact string returned by guarded
   `repr(value)` is used. Type-label failure or failure of both text paths is a declared
   unsupported category under SYS-004.
