@@ -367,6 +367,50 @@ def test_native_filter_hides_subtrees_retains_collapse_and_has_keyboard_parity(
     assert restored["payloadText"] == baseline["payloadText"]
     assert restored["canonicalText"] == baseline["canonicalText"]
 
+    nested_trace = event_trace(
+        (
+            EventSpec("UnchangedRoot", None, "root same", "root same"),
+            EventSpec(
+                "ChangedBranch", "UnchangedRoot", "branch before", "branch after"
+            ),
+            EventSpec(
+                "ChangedGrandchild",
+                "ChangedBranch",
+                "grandchild before",
+                "grandchild after",
+            ),
+            EventSpec("ChangedSibling", None, "sibling before", "sibling after"),
+        )
+    )
+    driver = _open_trace(
+        headed_chrome,
+        tmp_path,
+        nested_trace,
+        "unchanged-filter-nested-collapse",
+    )
+    root_toggle = driver.find_element(
+        By.CSS_SELECTOR,
+        '.event-collapse[data-event-id="event-0"]',
+    )
+    branch_toggle = driver.find_element(
+        By.CSS_SELECTOR,
+        '.event-collapse[data-event-id="event-1"]',
+    )
+    branch_toggle.click()
+    root_toggle.click()
+    assert _state(driver)["collapsed"] == ["event-0", "event-1"]
+    _filter_button(driver).click()
+    assert _state(driver)["visible"] == ["event-3"]
+    _filter_button(driver).click()
+    nested_restored = _state(driver)
+    assert nested_restored["collapsed"] == ["event-0", "event-1"]
+    assert nested_restored["visible"] == ["event-0", "event-3"]
+    root_toggle.click()
+    expanded_root = _state(driver)
+    assert expanded_root["collapsed"] == ["event-1"]
+    assert expanded_root["visible"] == ["event-0", "event-1", "event-3"]
+    assert expanded_root["hidden"] == ["event-2"]
+
     observations = headed_chrome.observations()
     assert observations.page_network_requests() == ()
     assert observations.csp_violations == ()
@@ -439,7 +483,7 @@ def test_filter_reconciles_selection_anchor_workspace_and_restoration(
         _classification_trace(),
         "unchanged-filter-fully-removed",
     )
-    _activate(driver, EVENT_IDS["changed_child"])
+    _activate(driver, EVENT_IDS["unchanged_leaf"])
     _filter_button(driver).click()
     cleared = _state(driver)
     assert cleared["frontier"] == []
