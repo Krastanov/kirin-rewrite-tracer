@@ -17,6 +17,7 @@ htmlcov/
 # Build products
 build/
 dist/
+site/
 *.egg-info/
 
 # Browser downloads, profiles, and generated evidence
