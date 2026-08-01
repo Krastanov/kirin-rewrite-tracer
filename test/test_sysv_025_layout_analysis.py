@@ -27,7 +27,7 @@ _REVIEWED = {
         "129bd134144c2974ddb3a5e7fbbc653238e2d58a36bbec9ccd040cd42398deb1"
     ),
     "test/browser_harness.py": (
-        "da3752a05839fadf95d97c6ddca1912fb5019f9792fb8b33669cb30d2590e89d"
+        "de14b9538590bcd2dd68c490e5a117cb50ee14b138d905925dc8f8103e6650f7"
     ),
 }
 

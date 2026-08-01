@@ -15,6 +15,7 @@ from typing import Final, cast
 from urllib.parse import urlsplit
 
 from selenium import webdriver
+from selenium.common.exceptions import TimeoutException
 from selenium.webdriver import Chrome
 from selenium.webdriver.chrome.options import Options
 from selenium.webdriver.chrome.service import Service
@@ -515,12 +516,34 @@ class BrowserHarness:
                 + round((height - measurement.css_height) * zoom_factor),
             )
             self.driver.set_window_rect(width=next_width, height=next_height)
+            self._await_outer_size(next_width, next_height)
         measurement = self.viewport()
         raise AssertionError(
             "could not establish requested measured CSS viewport "
             f"{width}x{height}; observed "
             f"{measurement.css_width}x{measurement.css_height}"
         )
+
+    def _await_outer_size(self, width: int, height: int) -> None:
+        """Let a requested outer size land before the next measurement.
+
+        A freshly launched window can report its previous size for several
+        milliseconds, which made every convergence step recompute the same target from
+        the same stale reading. Waiting is only an accuracy aid, so a size Chrome
+        declines to grant returns quietly and leaves the exact-match loop in charge.
+        """
+
+        try:
+            WebDriverWait(self.driver, 5, poll_frequency=0.02).until(
+                lambda driver: (
+                    driver.execute_script(
+                        "return [window.outerWidth, window.outerHeight];"
+                    )
+                    == [width, height]
+                )
+            )
+        except TimeoutException:
+            return
 
     def viewport(self) -> ViewportMeasurement:
         dimensions = cast(
