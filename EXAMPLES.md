@@ -543,9 +543,13 @@ no partial trace is offered
 This is the deliberate difference between the two failure modes above. A body exception
 is the traced code's problem, so the trace freezes and stays readable; unsupported use is
 the tracer's own limit, so the recorder is permanently invalidated and offers no partial
-trace at all. The rewrite itself still runs to completion — only the recording is
-refused. See the supported boundary in [`README.md`](README.md) for the full list of
-unsupported constructions.
+trace at all.
+
+Note that `UnsupportedTraceError` propagates out of the `rewrite` call, abandoning the
+rewrite at the point of detection — here the `scf.if` is left unconverted. Tracing is not
+transparent to an unsupported rewrite, so do not wrap one in `trace_rewrites` and expect
+the IR to come out the same as an untraced run. See the supported boundary in
+[`README.md`](README.md) for the full list of unsupported constructions.
 
 ## Reading the exported HTML
 
