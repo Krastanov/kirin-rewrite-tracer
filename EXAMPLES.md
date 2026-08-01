@@ -343,9 +343,15 @@ rethreaded through the merged statement. And the rewrite root here is the
 root, so scoping the rule to the region you care about keeps the export small and the
 diffs readable.
 
-Not every `bloqade-lanes` pass can be traced. `PhysicalNativeToPlace` internally runs
-`Walk(scf2cf.ScfToCfRule())`, which trips the boundary described in 5.3 below, so trace
-individual stages rather than a whole pipeline.
+Tracing a stage rather than a whole pipeline is also the safer default.
+`PhysicalNativeToPlace` internally runs `Walk(scf2cf.ScfToCfRule())`, which trips the
+boundary in 5.3 — but only when an `scf.IfElse` or `scf.For` actually survives to that
+point, since the rule reaches its unsupported branch only when it fires. `AggressiveUnroll`
+runs first and removes compile-time loops, so straight-line and `for`-range kernels trace
+through the pipeline unaffected; a kernel with a genuine runtime branch, such as
+mid-circuit feed-forward on a measurement, does not. Whole-pipeline traces are in any case
+expensive: unrolling a three-qubit kernel alone records over 12000 events, each carrying a
+full snapshot.
 
 ## 5. When rewrites misbehave
 
