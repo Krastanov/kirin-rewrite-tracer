@@ -15,7 +15,11 @@ it does not prove the universal requirement. A changed digest requires renewed r
 | `src/kirin_rewrite_tracer/_encoding.py` | `434d433816772498a7de53e7c970f87cc93da955d7790fe3be5fe5fcc383f8aa` |
 | `src/kirin_rewrite_tracer/_model.py` | `a9f1a5298dc1fd94f0b3229a09110fda6389785e6138c99a004b01cdda88e4f3` |
 | `test/test_viewer_styling_browser.py` | `129bd134144c2974ddb3a5e7fbbc653238e2d58a36bbec9ccd040cd42398deb1` |
-| `test/browser_harness.py` | `da3752a05839fadf95d97c6ddca1912fb5019f9792fb8b33669cb30d2590e89d` |
+| `test/browser_harness.py` | `4b2f72c39b3bf727e875e56640c103bcac79afe22a33e964e9d3fe9512531ce3` |
+
+Renewed for two continuous-integration changes: the `--no-sandbox` launch argument, and
+a bounded `set_css_viewport` wait for the content box to follow a resize. Neither is a
+cascade or intrinsic-size input, and the exact-match loop still decides every sample.
 
 ## Normal-flow and intrinsic-size inventory
 

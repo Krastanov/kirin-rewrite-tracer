@@ -6,14 +6,21 @@ on:
     branches: [main]
   workflow_dispatch:
 
+permissions:
+  contents: read
+
 concurrency:
   group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
   cancel-in-progress: true
 
+env:
+  UV_VERSION: "0.12.0"
+
 jobs:
   source:
     name: Python ${{ matrix.python-version }}
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
     strategy:
       fail-fast: false
       matrix:
@@ -23,7 +30,7 @@ jobs:
       - name: Install uv
         uses: astral-sh/setup-uv@v7
         with:
-          version: "0.12.0"
+          version: ${{ env.UV_VERSION }}
           enable-cache: true
           cache-dependency-glob: uv.lock
       - name: Install Python
@@ -31,11 +38,12 @@ jobs:
       - name: Sync the locked environment
         run: uv sync --locked --python ${{ matrix.python-version }}
       - name: Test
-        run: uv run --frozen pytest
+        run: uv run --frozen pytest -m 'not browser'
 
   installed:
     name: Installed wheel on Python ${{ matrix.python-version }}
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
     strategy:
       fail-fast: false
       matrix:
@@ -45,7 +53,7 @@ jobs:
       - name: Install uv
         uses: astral-sh/setup-uv@v7
         with:
-          version: "0.12.0"
+          version: ${{ env.UV_VERSION }}
           enable-cache: true
           cache-dependency-glob: uv.lock
       - name: Install Python
@@ -58,18 +66,96 @@ jobs:
         run: |
           uv pip install --python .installed-venv/bin/python dist/*.whl
           uv pip install --python .installed-venv/bin/python "pytest>=8.4,<9" "selenium>=4.35,<5" "kirin-toolchain[vmath] @ git+https://github.com/QuEraComputing/kirin.git@7cdc2e02ab7ef0b3f80aaa88f930ff34015d240a"
+      - name: Prove the import resolves inside the isolated environment
+        run: |
+          .installed-venv/bin/python -c "
+          import kirin_rewrite_tracer, pathlib, sys
+          located = pathlib.Path(kirin_rewrite_tracer.__file__).resolve()
+          if 'site-packages' not in located.parts:
+              sys.exit(f'import resolved outside site-packages: {located}')
+          print(located)
+          "
+        env:
+          PYTHONNOUSERSITE: "1"
       - name: Test the installed wheel
-        run: .installed-venv/bin/python -m pytest -q test
+        run: .installed-venv/bin/python -m pytest -q -m 'not browser' test
+        env:
+          PYTHONNOUSERSITE: "1"
 
-  quality:
-    name: Quality and distributions
-    runs-on: ubuntu-latest
+  browser:
+    name: Pinned headed Chrome
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
     steps:
       - uses: actions/checkout@v7
+      - name: Locate and identify the browser provision
+        # The cache key names the pinned browser rather than the file that declares it,
+        # so editing anything else in the harness cannot discard the download.
+        run: |
+          echo "KRT_CHROME_FOR_TESTING_ROOT=$RUNNER_TEMP/chrome-for-testing" >> "$GITHUB_ENV"
+          python3 - <<'PY' >> "$GITHUB_ENV"
+          import hashlib
+          import pathlib
+          import re
+
+          text = pathlib.Path("test/browser_harness.py").read_text(encoding="utf-8")
+          pins = []
+          for name in (
+              "CHROME_VERSION",
+              "CHROME_ARCHIVE_SHA256",
+              "CHROMEDRIVER_ARCHIVE_SHA256",
+          ):
+              found = re.search(rf'^{name}: Final = \(?\s*"([^"]+)"', text, re.M)
+              if found is None:
+                  raise SystemExit(f"{name} is no longer a pinned string literal")
+              pins.append(found.group(1))
+          digest = hashlib.sha256("\0".join(pins).encode()).hexdigest()[:16]
+          print(f"KRT_CHROME_PIN={pins[0]}-{digest}")
+          PY
       - name: Install uv
         uses: astral-sh/setup-uv@v7
         with:
-          version: "0.12.0"
+          version: ${{ env.UV_VERSION }}
+          enable-cache: true
+          cache-dependency-glob: uv.lock
+      - name: Install the pinned producer Python
+        run: uv python install 3.13.11
+      - name: Sync the locked environment
+        run: uv sync --locked --python 3.13.11
+      - name: Install Xvfb and the Chrome shared libraries
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends \
+            fonts-liberation libasound2t64 libatk-bridge2.0-0t64 libatk1.0-0t64 \
+            libcairo2 libcups2t64 libdrm2 libgbm1 libgtk-3-0t64 libnss3 \
+            libpango-1.0-0 libxcomposite1 libxdamage1 libxfixes3 libxkbcommon0 \
+            libxrandr2 x11-utils xvfb
+      - name: Restore the pinned Chrome for Testing cache
+        uses: actions/cache@v6
+        with:
+          path: ${{ runner.temp }}/chrome-for-testing
+          key: chrome-for-testing-${{ runner.os }}-${{ env.KRT_CHROME_PIN }}
+      - name: Provision and validate the pinned browser
+        run: uv run --python 3.13.11 --frozen python .github/scripts/provision_chrome.py
+      - name: Browser verification
+        run: |
+          xvfb-run -a -s '-screen 0 4096x3072x24' bash -c '
+            xdpyinfo | grep -m1 dimensions
+            uv run --python 3.13.11 --frozen python -m pytest -q -m browser
+          '
+
+  quality:
+    name: Quality and distributions
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
+      - name: Install uv
+        uses: astral-sh/setup-uv@v7
+        with:
+          version: ${{ env.UV_VERSION }}
           enable-cache: true
           cache-dependency-glob: uv.lock
       - name: Install Python
@@ -81,6 +167,14 @@ jobs:
           uv run --frozen ruff check .
           uv run --frozen ruff format --check .
           uv run --frozen mypy src test
+      - name: Check the incoming patch for whitespace damage
+        run: |
+          base='${{ github.event.pull_request.base.sha }}'
+          if [ -z "$base" ]; then
+            base="$(git rev-parse --verify --quiet HEAD^ || git rev-parse HEAD)"
+          fi
+          echo "checking $base..HEAD"
+          git diff --check "$base" HEAD
       - name: Run repository hooks
         run: uv run --frozen pre-commit run --all-files
       - name: Build distributions
@@ -90,3 +184,27 @@ jobs:
           uv venv --python 3.13 .wheel-venv
           uv pip install --python .wheel-venv/bin/python dist/*.whl
           .wheel-venv/bin/python -c "import importlib.metadata; import kirin_rewrite_tracer; assert importlib.metadata.version('kirin-rewrite-tracer') == '0.1.0'"
+      - name: Upload the distributions
+        uses: actions/upload-artifact@v7
+        with:
+          name: distributions
+          path: dist/
+          if-no-files-found: error
+
+  ci:
+    name: CI
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    needs: [source, installed, browser, quality]
+    if: always()
+    steps:
+      - name: Require every job to have succeeded
+        run: |
+          results='${{ join(needs.*.result, ' ') }}'
+          echo "required job results: $results"
+          for result in $results; do
+            if [ "$result" != success ]; then
+              echo "a required job reported '$result'"
+              exit 1
+            fi
+          done

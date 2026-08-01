@@ -15,6 +15,7 @@ from typing import Final, cast
 from urllib.parse import urlsplit
 
 from selenium import webdriver
+from selenium.common.exceptions import TimeoutException
 from selenium.webdriver import Chrome
 from selenium.webdriver.chrome.options import Options
 from selenium.webdriver.chrome.service import Service
@@ -289,6 +290,10 @@ class BrowserHarness:
         for argument in (
             f"--user-data-dir={profile}",
             f"--disk-cache-dir={cache}",
+            # The OS sandbox needs unprivileged user namespaces, which stock Ubuntu
+            # 24.04 refuses. Inertness is verified through CDP network denial, CSP, and
+            # console observation, so no verified property depends on it.
+            "--no-sandbox",
             "--window-size=1280,800",
             "--no-first-run",
             "--no-default-browser-check",
@@ -511,12 +516,37 @@ class BrowserHarness:
                 + round((height - measurement.css_height) * zoom_factor),
             )
             self.driver.set_window_rect(width=next_width, height=next_height)
+            self._await_content_response(
+                (measurement.css_width, measurement.css_height)
+            )
         measurement = self.viewport()
         raise AssertionError(
             "could not establish requested measured CSS viewport "
             f"{width}x{height}; observed "
-            f"{measurement.css_width}x{measurement.css_height}"
+            f"{measurement.css_width}x{measurement.css_height} inside a "
+            f"{measurement.outer_width}x{measurement.outer_height} window"
         )
+
+    def _await_content_response(self, previous: tuple[int, int]) -> None:
+        """Let a resize reach the content box before the next measurement.
+
+        The outer window reports a requested size as soon as it is asked for, so it
+        cannot witness the resize; only the CSS viewport shows that the content box
+        followed. Waiting is an accuracy aid, so a resize the content declines returns
+        quietly and leaves the exact-match loop in charge.
+        """
+
+        try:
+            WebDriverWait(self.driver, 2, poll_frequency=0.02).until(
+                lambda driver: (
+                    driver.execute_script(
+                        "return [window.innerWidth, window.innerHeight];"
+                    )
+                    != [previous[0], previous[1]]
+                )
+            )
+        except TimeoutException:
+            return
 
     def viewport(self) -> ViewportMeasurement:
         dimensions = cast(

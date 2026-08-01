@@ -29,3 +29,7 @@ xvfb-run -a -s '-screen 0 4096x3072x24' \
 The session uses a temporary profile, cache, and download directory under `/tmp`,
 disables page networking through CDP, and retains no screenshots, reports, or browser
 artifacts.
+
+[`.github/scripts/provision_chrome.py`](../../.github/scripts/provision_chrome.py)
+performs exactly this provision for continuous integration. It reads every URL, hash,
+and path from [`browser_harness.py`](../browser_harness.py), so the pin has one source.
