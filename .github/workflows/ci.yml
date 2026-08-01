@@ -107,7 +107,7 @@ jobs:
             fonts-liberation libasound2t64 libatk-bridge2.0-0t64 libatk1.0-0t64 \
             libcairo2 libcups2t64 libdrm2 libgbm1 libgtk-3-0t64 libnss3 \
             libpango-1.0-0 libxcomposite1 libxdamage1 libxfixes3 libxkbcommon0 \
-            libxrandr2 xvfb
+            libxrandr2 x11-utils xvfb
       - name: Restore the pinned Chrome for Testing cache
         uses: actions/cache@v6
         with:
@@ -116,18 +116,12 @@ jobs:
           restore-keys: chrome-for-testing-${{ runner.os }}-
       - name: Provision and validate the pinned browser
         run: uv run --python 3.13.11 --frozen python .github/scripts/provision_chrome.py
-      - name: Let the Chrome sandbox open a user namespace
-        # Ubuntu 24.04 refuses unprivileged user namespaces through AppArmor, so Chrome
-        # reports its version but every session dies as "Chrome instance exited".
-        # Relaxing the runner restriction keeps the sandbox on and leaves the pinned
-        # harness configuration untouched, which launching with --no-sandbox would not.
-        run: |
-          sysctl kernel.apparmor_restrict_unprivileged_userns || true
-          sudo sysctl -w kernel.apparmor_restrict_unprivileged_userns=0
       - name: Browser verification
         run: |
-          xvfb-run -a -s '-screen 0 4096x3072x24' \
+          xvfb-run -a -s '-screen 0 4096x3072x24' bash -c '
+            xdpyinfo | grep -m1 dimensions
             uv run --python 3.13.11 --frozen python -m pytest -q -m browser
+          '
 
   quality:
     name: Quality and distributions

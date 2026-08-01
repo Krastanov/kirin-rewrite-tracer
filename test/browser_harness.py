@@ -289,6 +289,10 @@ class BrowserHarness:
         for argument in (
             f"--user-data-dir={profile}",
             f"--disk-cache-dir={cache}",
+            # The OS sandbox needs unprivileged user namespaces, which stock Ubuntu
+            # 24.04 refuses. Inertness is verified through CDP network denial, CSP, and
+            # console observation, so no verified property depends on it.
+            "--no-sandbox",
             "--window-size=1280,800",
             "--no-first-run",
             "--no-default-browser-check",
