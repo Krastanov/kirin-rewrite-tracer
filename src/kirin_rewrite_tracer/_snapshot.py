@@ -675,7 +675,14 @@ def _render_metadata(value: object) -> RenderedValue:
     qualified_type = _qualified_type(value)
     if isinstance(value, Printable):
         try:
-            rendered = value.print_str(end="")
+            printer = Printer(
+                console=Console(
+                    color_system=None,
+                    force_jupyter=False,
+                    force_terminal=False,
+                )
+            )
+            rendered = value.print_str(printer, end="")
         except Exception:
             pass
         else:
