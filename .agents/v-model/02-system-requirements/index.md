@@ -6,7 +6,7 @@ The system layer is split by retrieval topic:
   and neutral incomplete-event retention.
 - [Rewrite compatibility](compatibility.md) — pinned support envelope, ordinary Python
   public entries, generic profiling dependencies, unsupported use, and
-  specialized-handler bypasses.
+  cross-instance specialized delegation.
 - [Snapshot fidelity](snapshots.md) — metadata inventory, styled SSA presentation and
   style-meta domain, and metadata-value representation.
 - [Exact provenance capture and projection](provenance.md) — stable entity identity,

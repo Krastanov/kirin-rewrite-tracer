@@ -44,15 +44,18 @@
 ## CMP-004 — Reduce profiler callbacks in strict LIFO order
 
 - **Normative statement:** Accept only exact active-session callbacks; classify through
-  the permitted documented surface; push after before-capture; and finalize/pop only the
-  matching innermost event. `RewriteResult` completes; every other public return is
-  neutral incomplete. Malformed, mismatched, out-of-order, cross-instance, or unsupported
+  the permitted documented surface; push after before-capture for every public frame and
+  for every specialized frame whose `self` differs by object identity from the innermost
+  open shell; and finalize/pop only the
+  matching innermost event. `RewriteResult` completes; every other recorded return is
+  neutral incomplete. Malformed, mismatched, out-of-order, unparented-specialized, or
+  unsupported
   callbacks atomically invalidate through the session's one stored
   `UnsupportedTraceError`, without constructing a second callback error.
 - **Parents:** SUB-001, SUB-002
-- **Acceptance criterion:** Valid nested/super/root/no-op/incomplete streams produce the
-  exact tree; every malformed stream produces one sticky invalidation and no partial
-  trace or misnesting.
+- **Acceptance criterion:** Valid nested/super/root/no-op/incomplete/cross-instance-
+  delegation streams produce the exact tree; every malformed stream produces one sticky
+  invalidation and no partial trace or misnesting.
 - **Verification:** UNITV-004 (test)
 
 ## CMP-005 — Authorize one saved mutation delegation

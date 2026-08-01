@@ -49,15 +49,19 @@
 
 - **Covers:** CMP-004
 - **Method:** test
-- **Procedure:** Feed valid nested/root/complete/incomplete callback streams, then inject
-  missing/wrong locals, code, receiver, session, order, and duplicate returns.
+- **Procedure:** Feed valid nested/root/complete/incomplete/cross-instance-delegation
+  callback streams, then inject
+  missing/wrong locals, code, non-`RewriteRule` receiver, session, order, duplicate
+  returns, and an unparented specialized receiver.
 - **Environment / configuration:** Documented callback shapes on CPython 3.10–3.13.
-- **Pass criterion:** Valid streams produce the exact tree and empty stack; every
+- **Pass criterion:** Valid streams produce the exact tree and empty stack, with
+  cross-instance delegation streams nesting under the innermost open shell and carrying
+  the delegated concrete rule type; every
   malformed stream causes one sticky invalidation, no partial trace, and no misnesting.
 - **Status:** failing
 - **Evidence:** [Detector executable counterexample](../evidence/detector-portability-inspection.md#executable-invalid-self-counterexample)
-- **Nonconformance:** A wrong receiver in an observable direct-override callback stream
-  is ignored instead of causing one sticky invalidation.
+- **Nonconformance:** A non-`RewriteRule` receiver in an observable direct-override
+  callback stream is ignored instead of causing one sticky invalidation.
 
 ## UNITV-005 — Verify one-shot mutation delegation tokens
 

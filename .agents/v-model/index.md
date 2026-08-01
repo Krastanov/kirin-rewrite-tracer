@@ -4,7 +4,7 @@
 - **Product boundary:** One standalone, developer-only Python library for observing Kirin
   rewrite effects during local debugging and tests.
 - **Acceptance authority:** Project developer.
-- **Last reviewed:** 2026-07-31 (SYS-025 collapse control added the same day)
+- **Last reviewed:** 2026-08-01 (cross-instance specialized delegation recorded as a nested event)
 
 ## Left-side specification
 

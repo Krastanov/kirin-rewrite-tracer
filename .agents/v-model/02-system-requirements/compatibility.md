@@ -77,10 +77,15 @@ unobservable and never-executed callable forms remain explicit input assumptions
   SYS-008; every other exit shall follow SYS-015. Each nested public `rewrite()` frame,
   including explicit same-instance superclass delegation, is a separate invocation. A
   `rewrite_Region`, `rewrite_Block`, or `rewrite_Statement` frame is internal dispatch
-  and shall not create another event only when its `self` is the exact `self` of the
-  innermost active public rewrite frame. An ordinary synchronous Python
-  specialized-handler call with any other `self` is unsupported under SYS-004 and shall
-  not leave a trace. An observable public frame whose owner, descriptor, `self`, `node`,
+  and shall not create another event only when its `self` is, by object identity, the
+  `self` of the innermost open recorded invocation. A specialized-handler frame with any
+  other `self` is itself a recorded invocation: it shall open exactly one event carrying
+  its own concrete rule type under that innermost open invocation, completing or
+  remaining neutral incomplete under SYS-008 and SYS-015 as a public frame does. A
+  specialized-handler frame observed while no recorded invocation is open is unsupported
+  under SYS-004 and shall not leave a trace. A *recorded invocation* is a supported public
+  `rewrite()` frame or such a specialized-handler frame.
+  An observable public frame whose owner, descriptor, `self`, `node`,
   or executing code does not satisfy this shape, and observable execution of generator,
   coroutine, or async-generator rewrite code, is likewise unsupported. A deferred
   callable never executed and a C or custom descriptor that produces no classifiable
@@ -90,11 +95,13 @@ unobservable and never-executed callable forms remain explicit input assumptions
   statement; an ordinary direct override; explicit same-instance superclass delegation;
   and each of the six direct override owners at the pinned revision (`Walk`, `Fixpoint`,
   `Chain`, `CompactifyRegion`, aggressive `Fold`, and `WalkDesugarBinop`) are observed
-  with one public event per executing public frame. Same-instance specialized dispatch
-  creates no extra event. A synthetic cross-instance specialized-handler call and the
-  pinned `ScfToCfRule` paths that delegate directly to `ForRule` and `IfElseRule`
-  fail without a trace. Observable malformed and executed deferred bodies invalidate;
-  construction without execution establishes no diagnostic claim.
+  with one event per executing public frame. Same-instance dispatch creates no extra
+  event even when the two instances compare equal. A synthetic cross-instance call and
+  the pinned `ScfToCfRule` paths delegating to `ForRule` and `IfElseRule` each add one
+  child event under the innermost open invocation, carrying the delegated rule's own
+  concrete type, and own the mutations they perform. A specialized handler observed while
+  no invocation is open fails without a trace. Observable malformed and executed deferred
+  bodies invalidate; construction without execution establishes no diagnostic claim.
 - **Verification:** SYSV-010 (test), SYSV-004 (test)
 - **Context:** [Kirin integration reference](../../context/kirin-integration.md) and
   [orchestration tracing options](../../context/orchestration-tracing.md)

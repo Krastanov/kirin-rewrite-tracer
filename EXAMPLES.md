@@ -12,14 +12,14 @@ then open the exported HTML for the same trace in a browser. The only shared cod
 
 ## Setting up
 
-Examples 1 through 3 and 5 need only the repository's own environment:
+Examples 1 through 4 and 6 need only the repository's own environment:
 
 ```console
 uv sync --python 3.13
 uv run python example.py
 ```
 
-Example 4 additionally needs `bloqade-lanes`, which pins `kirin-toolchain~=0.22.6` while
+Example 5 additionally needs `bloqade-lanes`, which pins `kirin-toolchain~=0.22.6` while
 the tracer requires the exact pinned Kirin commit. The two cannot be co-resolved, so
 install the pinned commit last and let it win:
 
@@ -31,14 +31,14 @@ uv pip install --no-deps "kirin-toolchain @ git+https://github.com/QuEraComputin
 ```
 
 `bloqade-lanes` 0.11.1 works against that commit, but this combination is outside the
-supported boundary in [`README.md`](README.md); treat example 4 as a demonstration
+supported boundary in [`README.md`](README.md); treat example 5 as a demonstration
 rather than a supported configuration.
 
 `export_html` never overwrites, so delete a previous export before re-running a snippet.
 
 ## A helper you will reuse
 
-Examples 1 and 4 print the recorded event tree with this helper. Save it as `tree.py`
+Examples 1, 4, and 5 print the recorded event tree with this helper. Save it as `tree.py`
 next to the snippet:
 
 ```python
@@ -252,7 +252,93 @@ multiply inside `square`. The viewer shows these as neighboring provenance on th
 selected row, which is how you answer "where did this statement come from" for IR that
 was never written by hand.
 
-## 4. Fusing parallel gates in a neutral-atom kernel
+## 4. Lowering structured control flow, and who owns the work
+
+Everything so far rewrote statements in place. `ScfToCfRule` is structural: it dissolves
+an `scf.if` and its two nested regions into ordinary basic blocks joined by branches. It
+is also the one rule in Kirin that delegates to *other* rule instances —
+`self.if_else_rule.rewrite_Statement(node)` — which makes it the clearest illustration of
+how the tracer decides who owns a piece of work.
+
+```python
+from pathlib import Path
+
+from kirin.dialects.scf import scf2cf
+from kirin.prelude import structural_no_opt
+from kirin.rewrite import Walk
+
+from kirin_rewrite_tracer import export_html, trace_rewrites
+from tree import print_tree
+
+
+@structural_no_opt
+def clamp(x: int) -> int:
+    if x > 10:
+        y = 10
+    else:
+        y = x
+    return y
+
+
+clamp.print()
+with trace_rewrites() as recorder:
+    result = Walk(scf2cf.ScfToCfRule()).rewrite(clamp.code)
+
+trace = recorder.trace
+print(result)
+print_tree(trace)
+clamp.print()
+owners = {operation.owner_event_id for operation in trace.operations}
+print("mutation owners:", sorted(owners))
+print(export_html(trace, Path("scf2cf-trace.html")))
+```
+
+The nested regions are gone, replaced by four blocks that pass `y` along as a block
+argument:
+
+```
+  │   %0 = py.constant.constant 10 : !py.int
+  │   %1 = py.cmp.gt(lhs=%x : !py.int, rhs=%0) : !py.bool
+  │        cf.br ^1()
+  ^1():
+  │        cf.cond_br %1 goto ^2(%1) else ^3(%1)
+  ^2(%2):
+  │   %y = py.constant.constant 10 : !py.int
+  │        cf.br ^4(%y)
+  ^3(%3):
+  │ %y_1 = py.assign.alias y = %x : !py.int
+  │        cf.br ^4(%y_1)
+  ^4(%y_2):
+  │        func.return %y_2 : ~T
+```
+
+The tree shows `Walk` visiting every node and `ScfToCfRule` declining on all but one. On
+that one it fires, and a second rule appears underneath it:
+
+```
+* Walk
+  . ScfToCfRule
+  ...
+  * ScfToCfRule
+    * IfElseRule
+  . ScfToCfRule
+  ...
+mutation owners: ['event-14']
+```
+
+That `IfElseRule` row is the point. `ScfToCfRule` did not do this work itself — it handed
+the node to a sub-rule instance, and the tracer follows the handoff and gives the sub-rule
+its own event. All seven mutation operations belong to `event-14`, the `IfElseRule` event,
+not to `event-13`, the `ScfToCfRule` event that delegated. Ownership follows the code that
+actually ran.
+
+The complementary case is just as important and is invisible here by design: when a rule
+calls *its own* specialized handler — `self.rewrite_Statement(...)`, which is what the
+base `RewriteRule.rewrite` does on every dispatch — that is internal plumbing, not a
+handoff, and it creates no event. The distinction is by object identity, so two rules that
+compare equal but are distinct objects still nest.
+
+## 5. Fusing parallel gates in a neutral-atom kernel
 
 The examples so far use synthetic rules. This one is a real pass from
 [`bloqade-lanes`](https://github.com/QuEraComputing/bloqade-lanes), the neutral-atom
@@ -343,19 +429,17 @@ rethreaded through the merged statement. And the rewrite root here is the
 root, so scoping the rule to the region you care about keeps the export small and the
 diffs readable.
 
-Tracing a stage rather than a whole pipeline is also the safer default.
-`PhysicalNativeToPlace` internally runs `Walk(scf2cf.ScfToCfRule())`, which trips the
-boundary in 5.3 — but only when an `scf.IfElse` or `scf.For` actually survives to that
-point, since the rule reaches its unsupported branch only when it fires. `AggressiveUnroll`
-runs first and removes compile-time loops, so straight-line and `for`-range kernels trace
-through the pipeline unaffected; a kernel with a genuine runtime branch, such as
-mid-circuit feed-forward on a measurement, does not. Whole-pipeline traces are in any case
-expensive: unrolling a three-qubit kernel alone records over 12000 events, each carrying a
-full snapshot.
+Tracing a stage rather than a whole pipeline is still the safer default, now purely for
+size rather than support. `PhysicalNativeToPlace` internally runs
+`Walk(scf2cf.ScfToCfRule())`, and every `scf.IfElse` or `scf.For` that survives
+`AggressiveUnroll` now adds a nested `IfElseRule` or `ForRule` event of its own, each with
+a full before and after snapshot. Whole-pipeline traces are expensive for that reason:
+unrolling a three-qubit kernel alone records well over 12000 events, each carrying a
+complete snapshot of the rewrite root.
 
-## 5. When rewrites misbehave
+## 6. When rewrites misbehave
 
-### 5.1 A fixpoint that never converges
+### 6.1 A fixpoint that never converges
 
 Two rules that disagree about a canonical form will loop forever. This is easy to write
 by accident across a large rule set and hard to diagnose from `exceeded_max_iter=True`
@@ -434,7 +518,7 @@ rules undoing each other rather than of slow convergence. The root `Fixpoint` ev
 absent from this list because a fixpoint that exceeds `max_iter` reports
 `has_done_something=False`, discarding the work it did.
 
-### 5.2 A rule that raises part way through
+### 6.2 A rule that raises part way through
 
 A rewrite that crashes normally leaves you with a traceback and IR in an unknown state:
 some nodes rewritten, some not, and no record of which. A supported body exception
@@ -502,34 +586,29 @@ every event before them completed normally and carries a usable before/after sna
 the `!` marker in `print_tree` reports. An incomplete trace exports and renders like any
 other.
 
-### 5.3 A rule the tracer refuses to trace
+### 6.3 A rule the tracer refuses to trace
 
-Kirin's `ScfToCfRule` holds two sub-rules and calls their `rewrite_Statement` handlers
-directly, so a specialized handler runs against a different rule instance than the one it
-was reached through. The tracer cannot attribute those events, and says so rather than
-recording something misleading.
+Every event the tracer records is attributed to the rewrite frame that dynamically
+encloses it. A specialized handler called directly, with no `rewrite()` anywhere on the
+stack, has nothing to attribute to — so the tracer refuses rather than record an orphan.
 
 ```python
-from kirin.dialects.scf import scf2cf
-from kirin.prelude import structural_no_opt
-from kirin.rewrite import Walk
+from kirin import ir
+from kirin.dialects import py
+from kirin.rewrite.abc import RewriteResult, RewriteRule
 
 from kirin_rewrite_tracer import UnsupportedTraceError, trace_rewrites
 
 
-@structural_no_opt
-def clamp(x: int) -> int:
-    if x > 10:
-        y = 10
-    else:
-        y = x
-    return y
+class Noop(RewriteRule):
+    def rewrite_Statement(self, node: ir.Statement) -> RewriteResult:
+        return RewriteResult()
 
 
 recorder = trace_rewrites()
 try:
     with recorder:
-        Walk(scf2cf.ScfToCfRule()).rewrite(clamp.code)
+        Noop().rewrite_Statement(py.Constant(0))
 except UnsupportedTraceError as exc:
     print("refused:", exc)
 
@@ -541,21 +620,26 @@ except UnsupportedTraceError:
 ```
 
 ```
-refused: a specialized rewrite handler crossed rule-instance ownership
+refused: a specialized rewrite handler ran outside a public rewrite event
 recorder state: INVALID
 no partial trace is offered
 ```
+
+Calling the same rule through `Noop().rewrite(...)` records normally. The refusal is
+narrow: it is about there being no enclosing invocation, not about which instance the
+handler belongs to — a handler on a *different* instance has a parent to attribute to and
+records its own nested event, as example 4 shows.
 
 This is the deliberate difference between the two failure modes above. A body exception
 is the traced code's problem, so the trace freezes and stays readable; unsupported use is
 the tracer's own limit, so the recorder is permanently invalidated and offers no partial
 trace at all.
 
-Note that `UnsupportedTraceError` propagates out of the `rewrite` call, abandoning the
-rewrite at the point of detection — here the `scf.if` is left unconverted. Tracing is not
-transparent to an unsupported rewrite, so do not wrap one in `trace_rewrites` and expect
-the IR to come out the same as an untraced run. See the supported boundary in
-[`README.md`](README.md) for the full list of unsupported constructions.
+Note that `UnsupportedTraceError` propagates out of the call, abandoning the rewrite at
+the point of detection. Tracing is not transparent to an unsupported rewrite, so do not
+wrap one in `trace_rewrites` and expect the IR to come out the same as an untraced run.
+See the supported boundary in [`README.md`](README.md) for the full list of unsupported
+constructions.
 
 ## Reading the exported HTML
 
@@ -570,7 +654,7 @@ works throughout.
 
 Exports in this file range from roughly 0.3 MB to 4.6 MB. Size scales with the number of
 events times the size of the rewrite root, since each event stores a full snapshot —
-narrowing the rewrite root, as example 4 does, is the effective lever.
+narrowing the rewrite root, as example 5 does, is the effective lever.
 
 The viewer is verified only against the pinned headed Chrome for Testing build and
 viewport range recorded in [`README.md`](README.md).

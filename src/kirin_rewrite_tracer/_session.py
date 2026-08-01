@@ -368,10 +368,10 @@ class TraceRecorder:
             classification = self._classify_frame(frame)
             if classification is None:
                 return
-            if classification.kind == "public":
+            if classification.kind == "public" or self._specialized_call_owns_event(
+                classification
+            ):
                 self._enter_event(frame, classification)
-            else:
-                self._validate_specialized_call(classification)
             return
 
         if event != "return":
@@ -380,7 +380,7 @@ class TraceRecorder:
             self._return_event(frame, argument)
             return
         if any(shell.frame is frame for shell in self._events):
-            self._invalidate("public rewrite frames returned out of LIFO order")
+            self._invalidate("rewrite frames returned out of LIFO order")
         classification = self._classify_frame(frame)
         if classification is not None and classification.kind == "public":
             self._invalidate(
@@ -453,15 +453,24 @@ class TraceRecorder:
             )
         return _FrameClassification(kind, rule, node, function)
 
-    def _validate_specialized_call(self, classification: _FrameClassification) -> None:
+    def _specialized_call_owns_event(
+        self, classification: _FrameClassification
+    ) -> bool:
+        """Report whether a specialized handler frame opens its own event.
+
+        A handler running on the innermost open event's own rule instance is
+        internal dispatch and records nothing. A handler running on any other
+        instance owns a nested event, so its activity is attributed to the rule
+        that performed it. Ownership is decided by object identity, never by
+        equality. A handler observed while no event is open has no parent to
+        attribute to and is unsupported.
+        """
+
         if not self._events:
             self._invalidate(
                 "a specialized rewrite handler ran outside a public rewrite event"
             )
-        if classification.rule is not self._events[-1].rule:
-            self._invalidate(
-                "a specialized rewrite handler crossed rule-instance ownership"
-            )
+        return classification.rule is not self._events[-1].rule
 
     def _enter_event(
         self, frame: FrameType, classification: _FrameClassification
@@ -509,7 +518,7 @@ class TraceRecorder:
     def _return_event(self, frame: FrameType, argument: object) -> None:
         shell = self._events[-1]
         if shell.frame is not frame:  # pragma: no cover - checked by reducer
-            self._invalidate("public rewrite return did not match its event shell")
+            self._invalidate("a rewrite return did not match its event shell")
         if not isinstance(argument, RewriteResult):
             self._events.pop()
             return

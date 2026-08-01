@@ -66,12 +66,10 @@ public-entry category and assigns the same event shape to every supported wrappe
 leaf `rewrite()` call. The six classes are mandatory compatibility fixtures rather than
 an allowlist in production code.
 
-`ScfToCfRule` is a distinct bypass case: its `rewrite_Statement` calls another rule
-instance's specialized `rewrite_Statement` directly rather than entering that rule
-through `rewrite()`. V1 rejects this ordinary synchronous Python cross-instance bypass
-instead of presenting the enclosing event as complete. Specialized calls on the
-innermost public frame's own instance remain internal dispatch and do not create extra
-events.
+`ScfToCfRule` delegates differently: its `rewrite_Statement` calls another rule
+instance's specialized handler directly rather than entering that rule through
+`rewrite()`. It is the only such site in the pinned tree; V1 records a nested event
+owned by `ForRule` or `IfElseRule`, which also owns its mutations.
 
 ## Minimal compatibility fixtures
 
@@ -86,6 +84,7 @@ behavior:
 | aggressive rewrite `Fold` | Construct from `const.Frame(func.ConstantNone())`, replace `.rule` with the sentinel, then invoke on an empty `ir.Block()` | Wrapper root with one sentinel child |
 | `WalkDesugarBinop` | A standalone `py.Constant(0)` | Outer rule, `Walk`, and one `DesugarBinOp` event |
 | Late ordinary override | Define a synchronous direct override during the active trace | One event with the local concrete type |
+| `ScfToCfRule` delegation | A detached `scf.For` or `scf.IfElse` | One event with one delegated-rule child |
 
 Replacing `.rule` in the two forwarding fixtures isolates public-entry compatibility
 from large internal composites; full orchestration is covered separately.
@@ -111,7 +110,7 @@ runtime result is a `RewriteResult`, so annotations cannot define compatibility.
 - **Additional delegation:** [`compactify.py`](https://github.com/QuEraComputing/kirin/blob/7cdc2e02ab7ef0b3f80aaa88f930ff34015d240a/src/kirin/rewrite/compactify.py#L253-L295),
   [`aggressive/fold.py`](https://github.com/QuEraComputing/kirin/blob/7cdc2e02ab7ef0b3f80aaa88f930ff34015d240a/src/kirin/rewrite/aggressive/fold.py#L18-L45),
   and [`desugar.py`](https://github.com/QuEraComputing/kirin/blob/7cdc2e02ab7ef0b3f80aaa88f930ff34015d240a/src/kirin/dialects/vmath/rewrites/desugar.py#L60-L68)
-- **Specialized-dispatch bypass:** [`scf2cf.py`](https://github.com/QuEraComputing/kirin/blob/7cdc2e02ab7ef0b3f80aaa88f930ff34015d240a/src/kirin/dialects/scf/scf2cf.py#L171-L182)
+- **Cross-instance specialized delegation:** [`scf2cf.py`](https://github.com/QuEraComputing/kirin/blob/7cdc2e02ab7ef0b3f80aaa88f930ff34015d240a/src/kirin/dialects/scf/scf2cf.py#L171-L182)
 - **Vmath fixture dependency:** [`pyproject.toml`](https://github.com/QuEraComputing/kirin/blob/7cdc2e02ab7ef0b3f80aaa88f930ff34015d240a/pyproject.toml#L15-L21),
   [`vmath/__init__.py`](https://github.com/QuEraComputing/kirin/blob/7cdc2e02ab7ef0b3f80aaa88f930ff34015d240a/src/kirin/dialects/vmath/__init__.py#L7-L9),
   and [`vmath/interp.py`](https://github.com/QuEraComputing/kirin/blob/7cdc2e02ab7ef0b3f80aaa88f930ff34015d240a/src/kirin/dialects/vmath/interp.py#L1-L2)

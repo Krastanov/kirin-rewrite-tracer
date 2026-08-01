@@ -17,7 +17,6 @@ from kirin.rewrite.compactify import CompactifyRegion
 
 from kirin_rewrite_tracer import (
     Trace,
-    UnsupportedTraceError,
     trace_rewrites,
 )
 
@@ -340,7 +339,47 @@ def test_pinned_direct_override_owners_use_uniform_event_shape() -> None:
     )
 
 
-def _scf_bypass_nodes() -> tuple[ir.Statement, ir.Statement]:
+@dataclass
+class _DeletingLeaf(RewriteRule):
+    doomed: ir.Statement
+
+    def rewrite_Statement(self, node: ir.Statement) -> RewriteResult:
+        self.doomed.delete()
+        return RewriteResult(has_done_something=True)
+
+
+@dataclass
+class _MutatingDelegator(RewriteRule):
+    child: RewriteRule
+
+    def rewrite(self, node: ir.IRNode[Any]) -> RewriteResult:
+        assert isinstance(node, ir.Statement)
+        return self.child.rewrite_Statement(node)
+
+
+def test_a_promoted_handler_owns_the_mutations_it_performs() -> None:
+    doomed = _ProbeStatement(result_types=(types.Any,))
+    probe = _ProbeStatement(result_types=(types.Any,))
+    ir.Block([doomed, probe])
+    rule = _MutatingDelegator(_DeletingLeaf(doomed))
+
+    with trace_rewrites() as recorder:
+        rule.rewrite(probe)
+
+    trace = recorder.trace
+    assert [event.rule_type.rsplit(".", 1)[-1] for event in trace.events] == [
+        "_MutatingDelegator",
+        "_DeletingLeaf",
+    ]
+    parent_id, child_id = (event.id for event in trace.events)
+    assert trace.operations
+    assert {operation.owner_event_id for operation in trace.operations} == {child_id}
+    assert parent_id not in {operation.owner_event_id for operation in trace.operations}
+    assert "Statement.delete" in {operation.api for operation in trace.operations}
+    assert [effect.kind for effect in trace.effects] == ["statement_delete_completed"]
+
+
+def _scf_delegation_nodes() -> tuple[ir.Statement, ir.Statement]:
     iterable = py.Constant(0)
     loop = scf.For(
         iterable.result,
@@ -355,22 +394,27 @@ def _scf_bypass_nodes() -> tuple[ir.Statement, ir.Statement]:
     return loop, conditional
 
 
-def test_pinned_scf_cross_instance_specialized_bypasses_invalidate() -> None:
-    for node in _scf_bypass_nodes():
-        recorder = trace_rewrites()
-        immediate: UnsupportedTraceError | None = None
-        with pytest.raises(UnsupportedTraceError) as exit_error, recorder:
-            try:
-                ScfToCfRule().rewrite(node)
-            except UnsupportedTraceError as error:
-                immediate = error
+def test_pinned_scf_cross_instance_delegation_records_nested_events() -> None:
+    delegated = (
+        "kirin.dialects.scf.scf2cf.ForRule",
+        "kirin.dialects.scf.scf2cf.IfElseRule",
+    )
+    for node, expected_child in zip(_scf_delegation_nodes(), delegated, strict=True):
+        with trace_rewrites() as recorder:
+            result = ScfToCfRule().rewrite(node)
 
-        assert immediate is not None
-        assert exit_error.value is immediate
-        assert recorder.state == "INVALID"
-        with pytest.raises(UnsupportedTraceError) as denied:
-            _ = recorder.trace
-        assert denied.value is immediate
+        assert result == RewriteResult()
+        trace = recorder.trace
+        assert trace.complete
+        assert [event.rule_type for event in trace.events] == [
+            "kirin.dialects.scf.scf2cf.ScfToCfRule",
+            expected_child,
+        ]
+        assert [(event.parent_id, event.sibling_ordinal) for event in trace.events] == [
+            (None, 0),
+            ("event-0", 0),
+        ]
+        assert trace.operations == ()
 
 
 _INCOMPLETE_SENTINEL = RuntimeError("acceptance child failure")
