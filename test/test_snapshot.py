@@ -340,6 +340,28 @@ def test_metadata_is_owner_specific_and_omission_is_explicit() -> None:
     )
 
 
+def test_printable_metadata_ignores_ambient_forced_color(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    monkeypatch.delenv("NO_COLOR", raising=False)
+    monkeypatch.setenv("FORCE_COLOR", "1")
+    source = py.Constant(7)
+    source.result.hints["forced-color"] = ir.PyAttr("plain metadata")
+
+    builder, _ = _capture(source)
+
+    hint = next(
+        record
+        for record in builder.metadata
+        if record.owner_entity_id == _entity_id(builder, source.result)
+        and record.namespace == "hint"
+        and record.key == "forced-color"
+    )
+    assert hint.value is not None
+    assert hint.value.path == "printable"
+    assert hint.value.text == "'plain metadata' : !py.str"
+
+
 def test_captured_facts_validate_as_an_immutable_incomplete_trace() -> None:
     root = ir.Region(ir.Block([py.Constant(1)]))
     builder, snapshot = _capture(root)
