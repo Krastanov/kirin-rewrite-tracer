@@ -141,7 +141,7 @@ outcomes are confirmed.
 - V1 explicitly rejects activation when the current thread already has an installed
   profile function. Once active, v1 assumes no code replaces its profile function and
   need not detect a violation.
-- V1 retains a neutral incomplete event when a supported public rewrite frame exits
+- V1 retains a neutral incomplete event when a supported recorded rewrite frame exits
   without returning a `RewriteResult`. The generic profiler does not classify that exit
   as either an exception or an explicit nonconforming return.
 - Exact deletion effects are initially limited to normally completed

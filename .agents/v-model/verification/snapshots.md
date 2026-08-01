@@ -72,7 +72,8 @@
   custom printable behavior in unselected hints or metadata-only caller-analysis
   entries, so canonical root rendering does not invoke them. Establish printable-text
   oracles by calling each value's `print_str(end="")` directly; do not infer them from
-  the value's raw payload.
+  the value's raw payload. Repeat one printable case with the ambient environment forcing
+  color and with `NO_COLOR` unset.
 - **Environment / configuration:** Local Python test process using Kirin commit
   `7cdc2e02ab7ef0b3f80aaa88f930ff34015d240a`, Rich 15.0.0, and the declared default
   rendering configuration, with one non-nested trace in a process that remains
@@ -80,7 +81,8 @@
 - **Pass criterion:** Each successful record contains the exact fully qualified Python
   type name and exact selected string: printable empty output remains empty, printable
   internal whitespace receives no project normalization, and a failed printable path
-  discards partial output before using its successful `repr()`.
+  discards partial output before using its successful `repr()`. The forced-color run
+  records the same uncolored text, with no escape sequence.
 - **Status:** implemented
 - **Evidence:** [Source and wheel action audit](../evidence/source-and-wheel-verification.md#action-audit)
 - **Nonconformance:** All specified printable, empty, whitespace, raising, and `repr`
