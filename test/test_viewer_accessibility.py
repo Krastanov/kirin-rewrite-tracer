@@ -366,7 +366,8 @@ def test_keyboard_focus_fallback_hidden_rows_and_restoration(
     assert len(root_nodes) == 1
     root_description = (
         f"Event {SELECTION_IDS['R9']}; rule R9; depth 0; parent absent; "
-        "sibling 1 of 4; completion incomplete; selection selected."
+        "sibling 1 of 4; completion incomplete; change classification incomplete; "
+        "selection selected."
     )
     assert root_nodes[0].description == root_description
     root_tree = headed_chrome.accessibility_tree()

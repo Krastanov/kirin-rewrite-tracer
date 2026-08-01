@@ -29,7 +29,10 @@ styles remain faithful and separate.
   independent outer focus outline shall remain simultaneously visible. Each SYS-025
   collapse button shall lead its row in one no-wrap row box, carry a fixed-width
   expanded or collapsed marker glyph, and, while disabled, use muted text with a dashed
-  border rather than any hue-only difference. State remains
+  border rather than any hue-only difference. A SYS-026 unchanged event shall use muted
+  text and the surface background until selected; selection shall restore primary text,
+  the selected background, and the selected marker. Each inconsistent event shall carry
+  the bordered textual `Inconsistent change flag` badge. State remains
   identifiable without hue through marker geometry, suffix delimiters and italics, ring
   geometry, collapse glyph and border geometry, textual shared-column and absent-state
   labels, and the focus outline.
@@ -60,15 +63,18 @@ styles remain faithful and separate.
   480 pixels high, the viewer shall not reorder, stack, truncate, or hide their content
   or controls. SSA text shall preserve whitespace without wrapping. V1 makes no
   presentation support claim for a measured viewport below 640 CSS pixels wide or below
-  480 CSS pixels high. V1 shall provide no
-  theme switcher, animation, custom search or filtering, graphical provenance panel,
+  480 CSS pixels high. Apart from the SYS-026 unchanged-event toggle, v1 shall provide
+  no theme switcher, animation, custom search or general-purpose filtering, graphical provenance panel,
   mobile/touch-specific layout, print view, or persisted UI state.
 - **Parents:** STK-001, STK-002, STK-003, STK-004, STK-005
 - **Acceptance criterion:** In default, selected, focused, metadata, provenance,
   shared-handoff, overlay, and combined states, computed colors equal the declared
   tokens and independently calculated unrounded contrast meets the exact adjacency
   matrix above. Selection has both its supplemental fill and authoritative three-pixel
-  marker; focus has its independent two-pixel offset outline. A disabled collapse button
+  marker; focus has its independent two-pixel offset outline. Confirmed unchanged rows
+  compute the muted/surface presentation while unselected, restore the complete
+  selection cue while selected, and retain the focus outline. Inconsistent rows expose
+  the bordered textual badge. A disabled collapse button
   computes muted text and a dashed border where an enabled one computes primary text and
   a solid border, and neither state wraps, reorders, or resizes its row. Every
   definition suffix is exactly

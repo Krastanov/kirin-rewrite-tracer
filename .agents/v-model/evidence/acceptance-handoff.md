@@ -43,8 +43,9 @@ SYS-024 and SUB-008 nonconforming.
 - canonical trace persistence, detached JSON, import, rehydration, or round trip;
 - other browsers, builds, operating systems, headless operation, mobile/touch, and
   measured viewports below `640×480`;
-- themes, animation, search/filter, graphical provenance, print, persisted UI state,
-  forced-colors/high-contrast mode, and broader accessibility claims;
+- themes, animation, custom search or general-purpose filtering, graphical provenance,
+  print, persisted UI state, forced-colors/high-contrast mode, and broader accessibility
+  claims;
 - deterministic artifact bytes, compression, streaming, and raw-data download; and
 - trace-size/performance limits. The Blink extent cap requires an explicit future choice
   among a bound/rejection, paging, nested scrolling, virtualization, or a changed

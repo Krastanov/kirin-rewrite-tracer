@@ -9,17 +9,21 @@ it does not prove the universal requirement. A changed digest requires renewed r
 
 | Source | SHA-256 |
 | --- | --- |
-| `src/kirin_rewrite_tracer/assets/viewer.css` | `9146e62939e9f76ff2a0d6bfe112a67ca512775c4ec4ad11f3f44868f4f06a11` |
-| `src/kirin_rewrite_tracer/assets/viewer.js` | `97ddeb29073909709fd204ee7dc3b61e3ad8ba64b367278406f048a9f76568ac` |
-| `src/kirin_rewrite_tracer/_export.py` | `d8acfd848a1043e08658349c71cd8cf470042d2be25c9123d97474dc2c796260` |
+| `src/kirin_rewrite_tracer/assets/viewer.css` | `2e36564770383ecc8a933119178dfac50f436a33ff925606a1182a4a0c6b10a8` |
+| `src/kirin_rewrite_tracer/assets/viewer.js` | `030fdad775a0a8ecca09ee57af41531b58d5c1469ca470696c498fd2d353b1e7` |
+| `src/kirin_rewrite_tracer/_export.py` | `dbbd5d15b2775fb7642c912331ad328b18a0d6ab4e742a1def28c849d3f63313` |
 | `src/kirin_rewrite_tracer/_encoding.py` | `434d433816772498a7de53e7c970f87cc93da955d7790fe3be5fe5fcc383f8aa` |
 | `src/kirin_rewrite_tracer/_model.py` | `a9f1a5298dc1fd94f0b3229a09110fda6389785e6138c99a004b01cdda88e4f3` |
-| `test/test_viewer_styling_browser.py` | `129bd134144c2974ddb3a5e7fbbc653238e2d58a36bbec9ccd040cd42398deb1` |
+| `test/test_viewer_styling_browser.py` | `5f47ac6144add8659420cd37aac078ffa6d95af08d9a3cd5ea4990f87adce0ab` |
 | `test/browser_harness.py` | `4b2f72c39b3bf727e875e56640c103bcac79afe22a33e964e9d3fe9512531ce3` |
 
-Renewed for two continuous-integration changes: the `--no-sandbox` launch argument, and
-a bounded `set_css_viewport` wait for the content box to follow a resize. Neither is a
-cascade or intrinsic-size input, and the exact-match loop still decides every sample.
+Renewed on 2026-08-01 for the unchanged-event presentation. The filter adds a no-wrap
+header control, muted event state, inconsistency badge, and semantically intended row or
+frontier removal; it adds no alternate layout, wrapping, truncation, or viewport branch.
+The pinned finite matrix was not rerun in the current macOS development environment, so
+its measurements remain prior corroboration rather than a new current-source browser
+claim. The existing Blink extent counterexample remains applicable because the reviewed
+change neither bounds snapshot text nor changes the state-column scroller.
 
 ## Normal-flow and intrinsic-size inventory
 
@@ -46,9 +50,14 @@ The complete reviewed set of normal-flow and intrinsic-inline-size inputs is:
   event column's max-content contribution per row is that fixed item plus the gap plus
   the button's own no-wrap text; the button's `100%` inline size resolves against that
   row and shrinks by exactly the leading item, never below its own text;
+- an inconsistent event's inline textual badge adds fixed padding, margin, border, and
+  system-font text inside the already no-wrap event button; muted unchanged styling
+  changes only paint until the ordinary selected rule takes precedence;
 - the disabled collapse rule changes only foreground color and border style, and the
   marker glyph swap stays inside the fixed `2rem` item;
-- no-wrap heading flex rows and their `0.75rem` gap;
+- no-wrap heading flex rows and their `0.75rem` gap; the event heading's nested
+  `.event-actions` is another no-wrap row with a `0.5rem` gap between Clear and the
+  filter, whose two fixed labels contribute their ordinary max-content width;
 - `.trace-code`: `ui-monospace, monospace` and `white-space: pre`; generated Rich
   weight/italics can affect glyph metrics, while color/background/decoration do not
   select another layout;
@@ -69,7 +78,8 @@ each adversarial occurrence, concatenated text/suffixes, relative geometry, styl
 wrapper dimensions before/after provenance.
 
 There is no media/container query, viewport script branch, grid alternative, wrap path,
-`order`, viewport-relative column maximum, overflow clip, or column-hiding rule.
+`order`, viewport-relative column maximum, overflow clip, or presentation rule that
+hides a retained frontier column.
 
 The complete reviewed JavaScript mutation set relevant to geometry is:
 
@@ -78,12 +88,14 @@ The complete reviewed JavaScript mutation set relevant to geometry is:
   `renderEventTree`, and the collapse path calls `renderEventTree` alone, so a collapse
   transition performs no column mutation at all;
 - `renderColumn` adds semantic classes and a heading plus absent label or code;
-- selection and collapse change which event rows are `hidden` and therefore may change
-  the event hierarchy's max-content width, but neither moves the leading event column
-  nor changes the reducer's SSA column order;
+- selection, collapse, and unchanged filtering change which event rows are `hidden` and
+  therefore may change the event hierarchy's max-content width. Filtering may also
+  reconcile the selected frontier and rebuild its intended columns, but none of the
+  three rules moves the leading event column or reorders any surviving SSA role;
 - `renderEventTree` additionally sets each collapse button's `disabled`, `aria-expanded`,
-  `aria-label`, `data-collapsed`, and marker text; only the marker text can affect
-  intrinsic size, and it stays inside that button's fixed inline size;
+  `aria-label`, `data-collapsed`, and marker text, plus the filter label and ARIA/data
+  state; the collapse marker stays inside its fixed inline size while the filter swaps
+  between its two ordinary no-wrap labels;
 - the no-selection path toggles `emptyWorkspace.hidden` and replaces state columns;
 - provenance/focus/metadata change data/ARIA/shared classes, not dimensions;
 - metadata opening inserts one fixed region and closing removes it; and
@@ -134,7 +146,7 @@ universal SYSV-025 criterion.
 
 An in-scope correction is unavailable: a size bound/rejection narrows valid inputs;
 wrapping, scaling, paging, nested scrolling, or virtualization changes approved
-behavior. This commit introduces none.
+behavior. This reviewed change introduces none of those corrections.
 
 ## Finite corroboration and exclusions
 

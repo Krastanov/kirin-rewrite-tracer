@@ -27,7 +27,8 @@ displayed-row oracles.
   branch first and then select its collapsed root.
   Finally, with one branch collapsed, plain-click a preceding row, Shift-click a
   following row, and compare frontier, anchor, rows, status, and columns with an oracle
-  that takes the inclusive interval over rows displayed under both hiding rules.
+  that takes the inclusive interval over rows displayed under parent dominance and
+  collapse. Repeat the nested-state sequence across both SYS-026 filter transitions.
   Activate Clear afterward and re-inspect the collapse set and rows.
 - **Environment / configuration:** The declared headed Chrome for Testing environment
   with the same offline controls as SYSV-018, primary pointer click, Shift-click, and
@@ -47,8 +48,9 @@ displayed-row oracles.
   programmatic activation; a control hidden inside a collapsed ancestor is equally
   inert. Clear re-enables them. An event collapsed before selection stays collapsed with
   `aria-expanded` false and the unavailable name.
-  The Shift range covers only displayed rows, so a collapsed root joins the frontier
-  without its hidden descendants and the anchor stays displayed. Clear then empties the
+  Filtering never clears retained collapse state or makes it reveal a row hidden by
+  another rule. The Shift range covers only displayed rows, so a collapsed root joins
+  the frontier without its hidden descendants and the anchor stays displayed. Clear then empties the
   frontier and anchor, leaves the collapse set unchanged, keeps those rows hidden, and
   still announces them in the hidden count. No page network request, CSP violation, or
   console entry occurs.

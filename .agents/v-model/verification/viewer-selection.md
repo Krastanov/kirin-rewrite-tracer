@@ -25,7 +25,8 @@ oracles.
   without a click, then Shift-click. After each action compare the frontier, anchor, and
   rendered rows with an oracle that snapshots pre-action visible order, takes the
   inclusive anchor-target interval, normalizes parent dominance, and updates visibility
-  only afterward.
+  only afterward. Repeat representative forward and reverse ranges while the SYS-026
+  filter is active, using the three-rule displayed order from SYSV-027.
   From singleton, multi-event, selected-parent, and already-clear states, activate the
   always-available native Clear button. Before each Clear, open descendant metadata and
   provenance state where possible; afterward record frontier, anchor, rows, columns,
@@ -77,9 +78,11 @@ oracles.
   event retains two distinct two-role handoff columns. An absent predecessor after-state
   never shares, while an incomplete successor's existing before-state may share with an
   equal predecessor after-state. Every Clear produces an empty frontier and null anchor,
-  restores every row collapse does not hide in original order, removes all derived
-  state, leaves the explicit no-selection facts state, and retains focus on Clear;
-  repeated Clear is idempotent.
+  restores every row neither collapse nor unchanged filtering hides in original order,
+  removes all derived state, leaves both states unchanged, leaves the explicit
+  no-selection facts state, and retains focus on Clear;
+  repeated Clear is idempotent. Filter-scoped reconciliation, restoration, and range
+  cases additionally match SYSV-027 without changing this reducer's gesture rules.
   The next row activation selects normally and event rows retain their non-toggle
   behavior.
 - **Status:** implemented

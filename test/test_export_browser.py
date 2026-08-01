@@ -43,6 +43,13 @@ def test_exported_hostile_trace_is_inert_offline_and_relocatable(
               ),
               styleAttributes: document.querySelectorAll("[style]").length,
               eventButtons: document.querySelectorAll(".event-button").length,
+              unchangedFilter: {
+                text: document.querySelector(".unchanged-filter").textContent,
+                pressed: document.querySelector(".unchanged-filter")
+                  .getAttribute("aria-pressed"),
+                controls: document.querySelector(".unchanged-filter")
+                  .getAttribute("aria-controls")
+              },
               dataType: document.getElementById("trace-data").type,
               hostileIsText: document.body.textContent.includes(arguments[0]),
               factsInitiallyHidden:
@@ -57,6 +64,11 @@ def test_exported_hostile_trace_is_inert_offline_and_relocatable(
         "activeNodes": 0,
         "dataType": "application/json",
         "eventButtons": 1,
+        "unchangedFilter": {
+            "text": "Hide unchanged events",
+            "pressed": "false",
+            "controls": "event-tree",
+        },
         "factsInitiallyHidden": True,
         "handlerAttributes": 0,
         "hostileIsText": True,
@@ -77,3 +89,4 @@ def test_exported_hostile_trace_is_inert_offline_and_relocatable(
     tree = headed_chrome.accessibility_tree()
     assert tree.matching(role="link", name="Skip event hierarchy")
     assert tree.matching(role="button", name="Clear selection")
+    assert tree.matching(role="button", name="Hide unchanged events")

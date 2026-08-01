@@ -6,7 +6,7 @@
 - **Do not open when:** Working only on HTML payload safety, offline composition, trace
   capture, canonical provenance storage, event-row selection, keyboard/focus behavior,
   or CSS styling.
-- **Related specification IDs:** SYS-020, SYS-021, SYS-022, SYS-023, SYS-024
+- **Related specification IDs:** SYS-020, SYS-021, SYS-022, SYS-023, SYS-024, SYS-026
 - **Review when:** Handoff equality, provenance applicability, SSA suffix, or
   metadata-overlay behavior changes.
 
@@ -111,6 +111,7 @@ the region closes it, while its own internal scroll remains open.
 
 Keyboard, focus, and accessible-preview decisions are explained in
 [viewer accessibility](viewer-accessibility.md); exact tokens, cues, layout, and CSS
-organization are in [viewer styling](viewer-styling.md). Custom search/filter and
-graphical provenance views are intentionally outside v1 rather than unresolved hidden
-states.
+organization are in [viewer styling](viewer-styling.md). Custom search,
+general-purpose filtering, and graphical provenance views are intentionally outside v1
+rather than unresolved hidden states. SYS-026 separately owns the narrow
+confirmed-unchanged subtree toggle.

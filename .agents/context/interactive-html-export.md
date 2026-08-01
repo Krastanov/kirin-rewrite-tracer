@@ -6,7 +6,7 @@
 - **Do not open when:** Working only on trace capture, Kirin interception, canonical
   provenance, or a non-HTML consumer of an already captured trace.
 - **Related specification IDs:** STK-004, STK-005, SYS-015, SYS-018, SYS-019, SYS-020,
-  SYS-021, SYS-022, SYS-023, SYS-024
+  SYS-021, SYS-022, SYS-023, SYS-024, SYS-026
 - **Review when:** The pinned browser target, required interactions, embedded-data
   boundary, or offline constraint changes.
 
@@ -36,8 +36,8 @@ Keep capture, export encoding, and browser presentation distinct:
    one inert trace payload. Source assets may remain logically separate for maintenance,
    but the exported artifact contains their exact content.
 4. The viewer parses the payload, rebuilds disposable reverse and occurrence indexes
-   from single-copy facts, and keeps selection, expansion, and panel state only in
-   memory. It never treats the DOM as the canonical trace.
+   from single-copy facts, and keeps selection, expansion, unchanged filtering, and
+   panel state only in memory. It never treats the DOM as the canonical trace.
 
 Require an existing destination parent and a nonexistent target. Write a temporary file
 in that same directory and publish atomically without overwrite; an existing or raced

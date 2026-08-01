@@ -8,19 +8,21 @@ V1 uses native document controls, not a custom ARIA tree, grid, or dialog.
   native event-row buttons in displayed depth-first order, without `tree`, `treegrid`,
   or custom roving-focus roles. A first-focus skip link shall move keyboard focus past
   the event hierarchy to the labelled SSA workspace. An always-available native
-  `Clear selection` button shall remain in sequential focus order, identify its action
-  accessibly, invoke SYS-020 exactly once through native activation, and retain focus
-  after clearing. `Tab` and `Shift+Tab` shall follow the visible native-control order.
+  `Clear selection` button and the SYS-026 native unchanged-filter toggle shall remain
+  in sequential focus order, identify their actions accessibly, invoke their reducers
+  exactly once through native activation, and retain focus after activation. `Tab` and
+  `Shift+Tab` shall follow the visible native-control order.
   Merely focusing an event row shall change neither
   selection nor range anchor. `Enter` or `Space` on an event row shall perform the same
   plain selection transition as its primary click, while Shift combined with either
   key shall perform the same Shift-range transition; Ctrl and Meta shall retain the
   precedence defined by SYS-020. Each row's accessible description shall identify its
-  event, hierarchy and completion status, and selected or unselected state. One polite
+  event, hierarchy, completion and SYS-026 classification status, selected or unselected
+  state, and the exact applicable inconsistency explanation. One polite
   status region shall announce one of these exact ordered schemas: `Selected: 0; hidden:
   H.`, `Selected: 1; event: E; hidden: H.`, or `Selected: N; first: E1; last: E2;
   hidden: H.`, where the values are the selected frontier count, displayed event IDs,
-  and the rows hidden by parent dominance or SYS-025 collapse.
+  and the rows hidden by parent dominance, SYS-025 collapse, or SYS-026 filtering.
   After event activation, focus shall remain on the target if it survives
   normalization. If a selected ancestor hides that target, focus shall move before
   presentation to the unique surviving selected ancestor. Hiding only the range anchor
@@ -81,7 +83,8 @@ V1 uses native document controls, not a custom ARIA tree, grid, or dialog.
   target is swallowed, focus lands on its selected ancestor; when only the anchor is
   swallowed, focus stays on the surviving target; later restoration moves no focus.
   Hidden descendants have no focus or accessibility node. Accessible row descriptions
-  report the oracle event state, and the status region exactly matches the applicable
+  report the oracle event and classification state, including either exact inconsistency
+  explanation, and the status region exactly matches the applicable
   zero-, singleton-, or plural-selection schema.
   Every definition and reference is a native occurrence button in column-major order
   whose name is its exact captured occurrence text and whose description has exact owner
@@ -106,6 +109,8 @@ V1 uses native document controls, not a custom ARIA tree, grid, or dialog.
   or recreation revives none. Clear is reachable and natively activatable in every
   selection state, clears exactly once, retains focus on itself, announces the
   zero-selection schema, and leaves the labelled facts region in its explicit
-  no-selection state.
+  no-selection state. The SYS-026 toggle has exact native keyboard parity, retains focus,
+  and any selection removal caused by filtering leaves focus on that toggle rather than
+  a detached row or occurrence.
 - **Verification:** SYSV-023 (test)
 - **Context:** [Viewer accessibility options](../../context/viewer-accessibility.md)

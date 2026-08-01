@@ -6,9 +6,9 @@
 - **Do not open when:** Working only on keyboard/focus behavior, selection reduction,
   export encoding, or trace capture.
 - **Related specification IDs:** SYS-006, SYS-019, SYS-020, SYS-021, SYS-022, SYS-023,
-  SYS-024, SYS-025
-- **Review when:** A token, selector strategy, visual state, layout, theme boundary, or
-  normalized Rich-style projection changes.
+  SYS-024, SYS-025, SYS-026
+- **Review when:** A token, selector strategy, classification/filter visual state,
+  layout, theme boundary, or normalized Rich-style projection changes.
 
 ## One semantic cascade
 
@@ -94,8 +94,11 @@ Selection combines fill with an inset leading marker. Focus uses an offset outli
 Provenance uses an inset box-shadow ring on the fixed occurrence wrapper, so it can
 coexist with the outer focus outline without changing text. The metadata suffix uses
 exact ` ⟦type-text⟧` delimiters plus italics. Shared columns and absent states retain
-their authoritative textual labels. The collapse button leads its row in a no-wrap flex
-box at one fixed inline size, so its glyph swap changes no row height or column order;
+their authoritative textual labels. Confirmed unchanged event buttons use the muted
+foreground and surface background, while their selected state restores primary text and
+the complete selected cue. An inconsistent event carries a bordered textual badge, so
+its mismatch is not communicated by hue. The collapse button leads its row in a no-wrap
+flex box at one fixed inline size, so its glyph swap changes no row height or column order;
 its disabled state adds a dashed border to the muted foreground rather than relying on
 color alone. Thus hue is never the only added signal.
 
@@ -114,7 +117,7 @@ Keep overlay collision handling equally small: size the one active region to at 
 `min(20rem, calc(50vh - 2rem))`, prefer an eight-pixel gap above its measured anchor,
 fall below when needed, clamp inline to eight-pixel viewport margins, and scroll its
 contents internally. The two measured position properties fit the shared overlay rule;
-no anchor-specific selector or style block is needed. A light theme, theme controls,
-custom search/filter, graph panel, mobile layout, print view, animation, and UI-state
-persistence are deferred as separate features rather than hidden hooks in the first
-stylesheet.
+no anchor-specific selector or style block is needed. Apart from the narrow confirmed
+unchanged toggle, a light theme, theme controls, custom search or general-purpose
+filtering, graph panel, mobile layout, print view, animation, and UI-state persistence
+are deferred as separate features rather than hidden hooks in the first stylesheet.

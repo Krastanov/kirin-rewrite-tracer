@@ -21,8 +21,9 @@ the oracle. Screenshots may diagnose failures but are not golden evidence.
   Rich 15.0.0 indexed palettes, reverse defaults, integer-truncating dim formula,
   composed decorations, and inert fields. Independently calculate unrounded sRGB
   contrast for viewer-authored text and only the adjacency pairs declared by SYS-024.
-  Inspect the selected marker, delimiters, italics, rings, and textual state labels in
-  the DOM and computed styles; a grayscale screenshot may be retained only as a
+  Inspect the selected marker, unchanged muted state, inconsistent textual badge,
+  delimiters, italics, rings, and textual state labels in the DOM and computed styles;
+  a grayscale screenshot may be retained only as a
   diagnostic.
   Inventory embedded stylesheets, root properties, selectors, generated Rich classes,
   every ordinary viewer `style` attribute, and the active overlay's measured custom
@@ -46,7 +47,10 @@ the oracle. Screenshots may diagnose failures but are not golden evidence.
   marker, provenance ring, and focus outline each reach 3:1 against every background in
   their exact SYS-024 adjacency set; the selected fill is not treated as the sole
   indicator. Selection has background `#1E3A5F` and a
-  non-layout-shifting three-pixel `#93C5FD` inline-start marker. Keyboard focus has a
+  non-layout-shifting three-pixel `#93C5FD` inline-start marker. Unchanged rows use the
+  muted foreground and surface background until selected, then restore primary text and
+  the complete selection cue; inconsistent rows expose the bordered textual badge.
+  Keyboard focus has a
   two-pixel, two-pixel-offset `#F472B6` outline on every focused control and on the
   focused overlay region. Every definition suffix is exactly one space, `⟦`,
   unnormalized retained type text, and `⟧`, in `#7DD3FC` italics; empty type is ` ⟦⟧`
@@ -73,8 +77,9 @@ the oracle. Screenshots may diagnose failures but are not golden evidence.
   column and every tested control and open overlay has a visible nonzero bounding box
   within the viewport when active. Diagnostic observations at `639 × 480` and
   `640 × 479` are labelled below the support floor and establish no compatibility
-  result. No theme, animation, custom search/filter, graphical
-  provenance, mobile/touch layout, print view, or UI-persistence control exists.
+  result. Apart from the SYS-026 toggle, no theme, animation, custom search or
+  general-purpose filtering, graphical provenance, mobile/touch layout, print view, or
+  UI-persistence control exists.
 - **Status:** implemented
 - **Evidence:** `test/test_viewer_styling.py`;
   `test/test_viewer_styling_browser.py::test_all_rich_palette_classes_compute_from_one_inert_cascade`;

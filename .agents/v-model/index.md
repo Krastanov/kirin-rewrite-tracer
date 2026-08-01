@@ -4,7 +4,8 @@
 - **Product boundary:** One standalone, developer-only Python library for observing Kirin
   rewrite effects during local debugging and tests.
 - **Acceptance authority:** Project developer.
-- **Last reviewed:** 2026-08-01 (cross-instance specialized delegation recorded as a nested event)
+- **Last reviewed:** 2026-08-01 (cross-instance specialized delegation and SYS-026
+  unchanged-event filtering updated the same day)
 
 ## Left-side specification
 
@@ -27,6 +28,7 @@
   invocation stacks.
 - One-file inert HTML export, native event/occurrence controls, Clear selection,
   subtree collapse controls enabled only when nothing in the subtree is selected,
+  confirmed-unchanged classification/filtering with inconsistency flags,
   canonical facts, exact neighboring provenance, metadata disclosure, focus handling,
   and the fixed dark cascade are implemented.
 - The sole viewer target is headed Chrome for Testing `151.0.7922.47`, revision
@@ -36,7 +38,7 @@
 
 ## Current verification state
 
-Across 48 actions, 7 are `passing`, 34 are `implemented`, and 7 are `failing`.
+Across 49 actions, 7 are `passing`, 35 are `implemented`, and 7 are `failing`.
 ACC-001–ACC-005 are implemented with approved automated fixtures but remain pending
 project-developer demonstration or review.
 

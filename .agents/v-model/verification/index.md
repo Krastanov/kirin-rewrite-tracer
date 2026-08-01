@@ -1,7 +1,7 @@
 # Verification and Acceptance Actions
 
 Mark an action `passing` only when durable evidence exercises every pass-criterion
-clause; do not paste transient logs. The current release audit records 7 `passing`, 34
+clause; do not paste transient logs. The current release audit records 7 `passing`, 35
 `implemented`, and 7 `failing` actions.
 
 Non-browser source and installed-distribution verification covers CPython 3.10, 3.11,
@@ -50,6 +50,9 @@ Actions are split by retrieval topic:
   reduction, automatic descendant hiding, and exact-equal dual-role handoffs.
 - [Event subtree collapse](viewer-collapse.md) — collapse structure, eligibility,
   nesting, keyboard parity, and range interaction.
+- [Unchanged event classification and filtering](viewer-unchanged-filter.md) — the four
+  classifications, mismatch cues, subtree hiding, selection reconciliation, and
+  filter-scoped ranges.
 - [Neighboring-column provenance viewer](viewer-provenance.md) — edge-scoped identity
   and exact selected-mutation hover.
 - [SSA metadata viewer](metadata-viewer.md) — definition-only SSA-type suffixes,

@@ -2,8 +2,8 @@
 
 The event tree, deterministic contiguous selection, automatic descendant-row hiding,
 parent-dominant logical event pairs, and exact-equal handoff columns are confirmed.
-Subtree collapse is specified by SYS-025; keyboard/focus behavior and visual
-presentation are specified by SYS-023 and SYS-024.
+Subtree collapse is specified by SYS-025, unchanged filtering by SYS-026, and
+keyboard/focus behavior and visual presentation by SYS-023 and SYS-024.
 
 ## SYS-020 — Present an event-tree and contiguous SSA workspace
 
@@ -16,7 +16,8 @@ presentation are specified by SYS-023 and SYS-024.
   selected; clicking a selected member of a multi-event frontier shall reduce the
   selection to that singleton.
   A Shift-primary-click shall first snapshot the complete rendered event-row order
-  immediately before the action. With a null anchor it shall behave as a plain click.
+  immediately before the action after parent dominance, SYS-025 collapse, and SYS-026
+  filtering have all been applied. With a null anchor it shall behave as a plain click.
   Otherwise it shall replace the prior selection with the inclusive visible-row
   interval between anchor and target, in either direction. Before changing the
   presentation, the view shall normalize that candidate interval by removing every
@@ -36,14 +37,14 @@ presentation are specified by SYS-023 and SYS-024.
   disclosure state, including the independent SYS-025 collapse state, shall reveal them
   while the ancestor is selected. A later action that excludes that ancestor shall
   restore the original hierarchy and order, eligible but unselected, without stale
-  state, except for rows the SYS-025 collapse state still hides. Selected events or
+  state, except for rows the SYS-025 collapse state or SYS-026 filter still hides. Selected events or
   coarse subtree units shall form one consecutive displayed tree range; hidden
   descendants shall create neither a gap nor a state.
   An always-available native `Clear selection` button shall atomically empty the
   frontier, set the anchor to null, clear every derived column, highlight, overlay, and
-  descendant state, and restore every event row that the SYS-025 collapse state does not
-  hide, unselected. Clear owns selection alone and shall leave that collapse state
-  unchanged. Clear shall remain available with zero selection and repeated activation
+  descendant state, and restore every event row that neither the SYS-025 collapse state
+  nor SYS-026 filter hides, unselected. Clear owns selection alone and shall leave both
+  states unchanged. Clear shall remain available with zero selection and repeated activation
   shall be idempotent. It shall not change the confirmed non-toggle behavior of
   event-row activation.
   To the right, each frontier event shall retain its logical styled `before` then
@@ -92,9 +93,11 @@ presentation are specified by SYS-023 and SYS-024.
   may share its existing before state with an equal predecessor after state. No
   incomplete event acquires an after state. Activating Clear from singleton,
   multi-event, parent-dominant, and already-clear states yields an empty frontier and
-  null anchor, restores every row collapse does not hide in original order, leaves the
-  collapse state unchanged, and removes all derived state; selecting a row afterward
-  starts from a null anchor while repeated Clear is inert.
+  null anchor, restores every row neither collapse nor unchanged filtering hides in
+  original order, leaves both states unchanged, and removes all derived state; selecting a row afterward
+  starts from a null anchor while repeated Clear is inert. SYS-026 selection
+  reconciliation and filter-scoped Shift ranges meet the additional acceptance cases of
+  SYSV-027.
 - **Verification:** SYSV-020 (test)
 - **Origin / risk:** Developer confirmations, 2026-07-30; post-action range coordinates,
   additive or toggling gestures, hidden anchors, exposed descendant controls, stale

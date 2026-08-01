@@ -125,11 +125,13 @@
 - **Covers:** CMP-009
 - **Method:** test
 - **Procedure:** Table-drive initial Shift, non-toggle plain/modifier/range,
-  expand/contract, swallowed/restored, Clear, complete/incomplete, equal/near-miss, and
-  no-op-middle cases over frozen inputs.
+  expand/contract, swallowed/restored, Clear, complete/incomplete, equal/near-miss,
+  all four change classifications, filter reconciliation/restoration, and no-op-middle
+  cases over frozen inputs.
 - **Environment / configuration:** Pure deterministic reducer tests.
 - **Pass criterion:** Frontier/anchor/rows/roles match pre-action oracles; Clear is
-  empty/null; sharing is exact, two-role, nontransitive, and never crosses absent after.
+  empty/null; filter reconciliation retains, rebases, or clears the anchor exactly;
+  sharing is exact, two-role, nontransitive, and never crosses absent after.
 - **Status:** implemented
 - **Evidence:** [Source/wheel](../evidence/source-and-wheel-verification.md#action-audit)
   and [browser](../evidence/browser-verification.md#action-audit) action audits
@@ -141,10 +143,12 @@
 - **Covers:** CMP-010
 - **Method:** test
 - **Procedure:** Interleave click, Escape, scroll, resize, removal, role transition,
-  Clear, recreation, pointer/keyboard candidates, and focused-region fallback.
+  Clear, filter-driven selection removal, recreation, pointer/keyboard candidates, and
+  focused-region fallback.
 - **Environment / configuration:** Pure exact-identity interaction fixtures.
 - **Pass criterion:** Each input yields at most one overlay/preview, exact candidate
-  precedence and focus including Clear, and no detached or revived stale state.
+  precedence and focus including Clear and the unchanged filter, and no detached or
+  revived stale state.
 - **Status:** implemented
 - **Evidence:** [Source/wheel](../evidence/source-and-wheel-verification.md#action-audit)
   and [browser](../evidence/browser-verification.md#action-audit) action audits

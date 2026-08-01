@@ -9,13 +9,13 @@ _EVIDENCE = _ROOT / ".agents" / "v-model" / "evidence" / "sysv-025-layout-invari
 _VERIFICATION = _ROOT / ".agents" / "v-model" / "verification" / "viewer-styling.md"
 _REVIEWED = {
     "src/kirin_rewrite_tracer/assets/viewer.css": (
-        "9146e62939e9f76ff2a0d6bfe112a67ca512775c4ec4ad11f3f44868f4f06a11"
+        "2e36564770383ecc8a933119178dfac50f436a33ff925606a1182a4a0c6b10a8"
     ),
     "src/kirin_rewrite_tracer/assets/viewer.js": (
-        "97ddeb29073909709fd204ee7dc3b61e3ad8ba64b367278406f048a9f76568ac"
+        "030fdad775a0a8ecca09ee57af41531b58d5c1469ca470696c498fd2d353b1e7"
     ),
     "src/kirin_rewrite_tracer/_export.py": (
-        "d8acfd848a1043e08658349c71cd8cf470042d2be25c9123d97474dc2c796260"
+        "dbbd5d15b2775fb7642c912331ad328b18a0d6ab4e742a1def28c849d3f63313"
     ),
     "src/kirin_rewrite_tracer/_encoding.py": (
         "434d433816772498a7de53e7c970f87cc93da955d7790fe3be5fe5fcc383f8aa"
@@ -24,7 +24,7 @@ _REVIEWED = {
         "a9f1a5298dc1fd94f0b3229a09110fda6389785e6138c99a004b01cdda88e4f3"
     ),
     "test/test_viewer_styling_browser.py": (
-        "129bd134144c2974ddb3a5e7fbbc653238e2d58a36bbec9ccd040cd42398deb1"
+        "5f47ac6144add8659420cd37aac078ffa6d95af08d9a3cd5ea4990f87adce0ab"
     ),
     "test/browser_harness.py": (
         "4b2f72c39b3bf727e875e56640c103bcac79afe22a33e964e9d3fe9512531ce3"
@@ -127,6 +127,24 @@ def test_sysv_025_analysis_records_complete_inventory_and_counterexample() -> No
     assert "flex-flow: row nowrap" in heading
     assert "gap: 0.75rem" in heading
     assert "white-space: nowrap" in heading
+    event_actions = _rule_body(css, ".event-actions")
+    assert "display: flex" in event_actions
+    assert "flex-flow: row nowrap" in event_actions
+    assert "gap: 0.5rem" in event_actions
+    inconsistency_badge = _rule_body(css, ".event-inconsistency-badge")
+    assert "margin-inline-start: 0.6rem" in inconsistency_badge
+    assert "padding: 0.1rem 0.3rem" in inconsistency_badge
+    assert "border: 1px solid var(--border)" in inconsistency_badge
+    unchanged_button = _rule_body(
+        css,
+        ':where(li[data-event-classification="unchanged"]) '
+        "> .event-row > .event-button",
+    )
+    assert "color: var(--muted)" in unchanged_button
+    assert "background: var(--surface)" in unchanged_button
+    assert css.index(':where(li[data-event-classification="unchanged"])') < css.index(
+        '.event-button[aria-current="true"]'
+    )
 
     code = _rule_body(css, ".trace-code")
     assert "font-family: ui-monospace, monospace" in code
@@ -176,6 +194,10 @@ def test_sysv_025_analysis_records_complete_inventory_and_counterexample() -> No
     )
     assert ".hidden =" in javascript
     assert "emptyWorkspace.hidden = state.frontier.length !== 0" in javascript
+    assert "reconcileSelectionForUnchangedFilter" in javascript
+    assert "renderEventTree(selectionState, collapseState, hideUnchangedEvents)" in (
+        javascript
+    )
     assert re.findall(
         r'\.style\.setProperty\(\s*"([^"]+)"',
         javascript,

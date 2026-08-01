@@ -12,6 +12,7 @@ const facts = document.getElementById("selected-facts");
 const factsEmpty = document.getElementById("facts-empty");
 const selectionStatus = document.getElementById("selection-status");
 const clearSelection = document.querySelector(".clear-selection");
+const unchangedFilter = document.querySelector(".unchanged-filter");
 const skipLink = document.querySelector(".skip-link");
 const ssaWorkspace = document.getElementById("ssa-workspace");
 
@@ -47,6 +48,7 @@ const eventRows = new Map();
 const eventDescriptions = new Map();
 const eventCollapseToggles = new Map();
 const eventCollapseMarkers = new Map();
+const eventClassificationById = new Map();
 const occurrenceRecordByElement = new WeakMap();
 const neighborProjectionByRecord = new WeakMap();
 
@@ -144,6 +146,41 @@ function appendPreorder(parentId) {
   }
 }
 appendPreorder(null);
+
+function snapshotSemanticClass(snapshotId) {
+  const projected = projectedSnapshotById.get(snapshotId);
+  if (projected === undefined) {
+    throw new Error(`missing projected snapshot: ${snapshotId}`);
+  }
+  return projected.semantic_class;
+}
+
+function classifyEvent(event) {
+  if (event.completion === "incomplete") {
+    return "incomplete";
+  }
+  if (event.after_snapshot_id === null || event.result === null) {
+    throw new Error(`complete event lacks retained output: ${event.id}`);
+  }
+  const snapshotsEqual =
+    snapshotSemanticClass(event.before_snapshot_id) ===
+    snapshotSemanticClass(event.after_snapshot_id);
+  const hasDoneSomething = event.result.has_done_something;
+  if (snapshotsEqual && !hasDoneSomething) {
+    return "unchanged";
+  }
+  if (!snapshotsEqual && hasDoneSomething) {
+    return "changed";
+  }
+  return "inconsistent";
+}
+
+for (const event of trace.events) {
+  eventClassificationById.set(event.id, classifyEvent(event));
+}
+const hasUnchangedEvents = trace.events.some(
+  (event) => eventClassificationById.get(event.id) === "unchanged",
+);
 
 summary.textContent = `${trace.events.length} event${trace.events.length === 1 ? "" : "s"}; aggregate ${trace.complete ? "complete" : "incomplete"}.`;
 if (trace.events.length === 0) {
@@ -251,7 +288,8 @@ function childEvents(eventId) {
 
 /*
  * Collapse is one independent monotonically hiding disclosure state. It never
- * reveals a row that parent dominance hides, so the two rules compose as a union.
+ * reveals a row hidden by parent dominance or filtering, so all rules compose as a
+ * union.
  */
 function freezeCollapse(eventIds) {
   const ordered = orderedUnique(eventIds);
@@ -280,7 +318,21 @@ function collapseEligible(eventId, state) {
   );
 }
 
-function visibleEventIds(state, collapsed) {
+function hiddenByUnchangedFilter(eventId, hideUnchanged) {
+  if (!hideUnchanged) {
+    return false;
+  }
+  let candidateId = eventId;
+  while (candidateId !== null && candidateId !== undefined) {
+    if (eventClassificationById.get(candidateId) === "unchanged") {
+      return true;
+    }
+    candidateId = parentByEvent.get(candidateId);
+  }
+  return false;
+}
+
+function visibleEventIds(state, collapsed, hideUnchanged = false) {
   return eventPreorder.filter(
     (eventId) =>
       !state.frontier.some((selectedId) =>
@@ -288,7 +340,8 @@ function visibleEventIds(state, collapsed) {
       ) &&
       !collapsed.some((collapsedId) =>
         isStrictDescendant(eventId, collapsedId),
-      ),
+      ) &&
+      !hiddenByUnchangedFilter(eventId, hideUnchanged),
   );
 }
 
@@ -363,6 +416,25 @@ function reduceSelection(current, input, visibleBefore) {
   return freezeSelection(frontier, anchor);
 }
 
+function reconcileSelectionForUnchangedFilter(current, hideUnchanged) {
+  if (!hideUnchanged) {
+    return current;
+  }
+  const frontier = current.frontier.filter(
+    (eventId) => !hiddenByUnchangedFilter(eventId, true),
+  );
+  if (frontier.length === current.frontier.length) {
+    return current;
+  }
+  if (frontier.length === 0) {
+    return freezeSelection([], null);
+  }
+  const anchor = frontier.includes(current.anchor)
+    ? current.anchor
+    : frontier[0];
+  return freezeSelection(frontier, anchor);
+}
+
 function snapshotRole(eventId, state, snapshotId) {
   return Object.freeze({
     kind: "snapshot",
@@ -396,14 +468,6 @@ function freezeColumn(roles) {
     ]),
   );
   return Object.freeze({key, roles: frozenRoles});
-}
-
-function snapshotSemanticClass(snapshotId) {
-  const projected = projectedSnapshotById.get(snapshotId);
-  if (projected === undefined) {
-    throw new Error(`missing projected snapshot: ${snapshotId}`);
-  }
-  return projected.semantic_class;
 }
 
 function reduceColumns(frontier) {
@@ -501,7 +565,17 @@ function eventDescription(event, depth, selected) {
   const sibling = siblings.indexOf(event) + 1;
   const parent =
     event.parent_id === null ? "absent" : event.parent_id;
-  return `Event ${event.id}; rule ${event.rule_type}; depth ${depth}; parent ${parent}; sibling ${sibling} of ${siblings.length}; completion ${event.completion}; selection ${selected ? "selected" : "unselected"}.`;
+  const classification = eventClassificationById.get(event.id);
+  let inconsistency = "";
+  if (classification === "inconsistent") {
+    const snapshotsEqual =
+      snapshotSemanticClass(event.before_snapshot_id) ===
+      snapshotSemanticClass(event.after_snapshot_id);
+    inconsistency = snapshotsEqual
+      ? " Inconsistent change flag: retained before and after snapshots are semantically equal, but has_done_something is true."
+      : " Inconsistent change flag: retained before and after snapshots are semantically different, but has_done_something is false.";
+  }
+  return `Event ${event.id}; rule ${event.rule_type}; depth ${depth}; parent ${parent}; sibling ${sibling} of ${siblings.length}; completion ${event.completion}; change classification ${classification}; selection ${selected ? "selected" : "unselected"}.${inconsistency}`;
 }
 
 function collapseLabel(event, collapsed, eligible) {
@@ -540,11 +614,23 @@ function appendEventBranch(parentId, list, depth) {
     const descriptionId = `event-description-${eventDescriptionSequence}`;
     eventDescriptionSequence += 1;
     row.className = "event-row";
+    item.dataset.eventClassification = eventClassificationById.get(event.id);
     button.type = "button";
     button.className = "event-button";
     button.dataset.eventId = event.id;
     button.dataset.depth = String(depth);
-    button.textContent = `${event.id} — ${event.rule_type} — ${event.completion}`;
+    button.append(
+      document.createTextNode(
+        `${event.id} — ${event.rule_type} — ${event.completion}`,
+      ),
+    );
+    if (eventClassificationById.get(event.id) === "inconsistent") {
+      const badge = document.createElement("span");
+      badge.className = "event-inconsistency-badge";
+      badge.textContent = "Inconsistent change flag";
+      badge.setAttribute("aria-hidden", "true");
+      button.append(badge);
+    }
     button.setAttribute("aria-describedby", descriptionId);
     description.id = descriptionId;
     description.className = "visually-hidden event-description";
@@ -1859,8 +1945,10 @@ function renderFacts(state) {
   factsEmpty.hidden = true;
 }
 
-function renderEventTree(state, collapsed) {
-  const visible = new Set(visibleEventIds(state, collapsed));
+function renderEventTree(state, collapsed, hideUnchanged) {
+  const visible = new Set(
+    visibleEventIds(state, collapsed, hideUnchanged),
+  );
   let hiddenCount = 0;
   for (const eventId of eventPreorder) {
     const event = eventById.get(eventId);
@@ -1907,6 +1995,15 @@ function renderEventTree(state, collapsed) {
   eventTree.dataset.frontier = state.frontier.join(" ");
   eventTree.dataset.anchor = state.anchor === null ? "" : state.anchor;
   eventTree.dataset.collapsed = collapsed.join(" ");
+  eventTree.dataset.hideUnchanged = hideUnchanged ? "true" : "false";
+  unchangedFilter.textContent = hideUnchanged
+    ? "Show unchanged events"
+    : "Hide unchanged events";
+  unchangedFilter.setAttribute(
+    "aria-pressed",
+    hideUnchanged ? "true" : "false",
+  );
+  unchangedFilter.disabled = !hasUnchangedEvents;
 
   if (state.frontier.length === 0) {
     selectionStatus.textContent = `Selected: 0; hidden: ${hiddenCount}.`;
@@ -1940,15 +2037,20 @@ function renderWorkspace(state) {
 function renderSelection(state) {
   dismissMetadataOccurrence();
   discardProvenanceCandidates();
-  renderEventTree(state, collapseState);
+  renderEventTree(state, collapseState, hideUnchangedEvents);
   renderWorkspace(state);
 }
 
 let selectionState = freezeSelection([], null);
 let collapseState = freezeCollapse([]);
+let hideUnchangedEvents = false;
 
 function focusEventTargetBeforeRender(eventId, nextState) {
-  const nextVisible = visibleEventIds(nextState, collapseState);
+  const nextVisible = visibleEventIds(
+    nextState,
+    collapseState,
+    hideUnchangedEvents,
+  );
   if (nextVisible.includes(eventId)) {
     eventButtons.get(eventId).focus({preventScroll: true});
     return;
@@ -1965,7 +2067,11 @@ function focusEventTargetBeforeRender(eventId, nextState) {
 }
 
 function activateEvent(eventId, inputEvent) {
-  const visibleBefore = visibleEventIds(selectionState, collapseState).slice();
+  const visibleBefore = visibleEventIds(
+    selectionState,
+    collapseState,
+    hideUnchangedEvents,
+  ).slice();
   const nextState = reduceSelection(
     selectionState,
     {
@@ -1990,7 +2096,7 @@ function clearCurrentSelection() {
   selectionState = reduceSelection(
     selectionState,
     {kind: "clear"},
-    visibleEventIds(selectionState, collapseState),
+    visibleEventIds(selectionState, collapseState, hideUnchangedEvents),
   );
   renderSelection(selectionState);
   clearSelection.focus({preventScroll: true});
@@ -2005,12 +2111,16 @@ function toggleEventCollapse(eventId) {
     collapseState,
     {kind: "toggle", targetId: eventId},
     selectionState,
-    visibleEventIds(selectionState, collapseState),
+    visibleEventIds(selectionState, collapseState, hideUnchangedEvents),
   );
   if (nextCollapsed === collapseState) {
     return;
   }
-  const nextVisible = visibleEventIds(selectionState, nextCollapsed);
+  const nextVisible = visibleEventIds(
+    selectionState,
+    nextCollapsed,
+    hideUnchangedEvents,
+  );
   if (
     !selectionState.frontier.every((selectedId) =>
       nextVisible.includes(selectedId),
@@ -2019,8 +2129,32 @@ function toggleEventCollapse(eventId) {
     throw new Error("collapsing must never hide a selected event");
   }
   collapseState = nextCollapsed;
-  renderEventTree(selectionState, collapseState);
+  renderEventTree(selectionState, collapseState, hideUnchangedEvents);
   eventCollapseToggles.get(eventId).focus({preventScroll: true});
+}
+
+function toggleUnchangedFilter() {
+  unchangedFilter.focus({preventScroll: true});
+  if (!hasUnchangedEvents) {
+    return;
+  }
+  const nextHideUnchanged = !hideUnchangedEvents;
+  const nextSelection = reconcileSelectionForUnchangedFilter(
+    selectionState,
+    nextHideUnchanged,
+  );
+  hideUnchangedEvents = nextHideUnchanged;
+  if (nextSelection === selectionState) {
+    renderEventTree(
+      selectionState,
+      collapseState,
+      hideUnchangedEvents,
+    );
+  } else {
+    selectionState = nextSelection;
+    renderSelection(selectionState);
+  }
+  unchangedFilter.focus({preventScroll: true});
 }
 
 function followSkipLink(inputEvent) {
@@ -2034,6 +2168,7 @@ function clearPendingTabOnPointer() {
 
 appendEventBranch(null, eventTree, 0);
 clearSelection.addEventListener("click", clearCurrentSelection);
+unchangedFilter.addEventListener("click", toggleUnchangedFilter);
 skipLink.addEventListener("click", followSkipLink);
 document.addEventListener("click", handleMetadataClick, true);
 document.addEventListener("keydown", handleProvenanceKeyDown, true);

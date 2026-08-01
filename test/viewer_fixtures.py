@@ -173,6 +173,7 @@ class EventSpec:
     parent: str | None
     before: str
     after: str | None
+    has_done_something: bool | None = None
 
 
 @dataclass(frozen=True, slots=True)
@@ -293,7 +294,11 @@ def event_trace(specifications: tuple[EventSpec, ...]) -> Trace:
                     if after_id is None
                     else RewriteResultRecord(
                         False,
-                        specification.before != specification.after,
+                        (
+                            specification.before != specification.after
+                            if specification.has_done_something is None
+                            else specification.has_done_something
+                        ),
                         False,
                     )
                 ),

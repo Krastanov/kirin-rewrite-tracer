@@ -132,7 +132,11 @@ def _document_bytes(trace: Trace, *, nonce: str | None = None) -> bytes:
         '<section class="event-column" aria-labelledby="events-heading">\n'
         '<div class="column-heading">\n'
         '<h2 id="events-heading">Events</h2>\n'
+        '<div class="event-actions">\n'
         '<button class="clear-selection" type="button">Clear selection</button>\n'
+        '<button class="unchanged-filter" type="button" aria-pressed="false" '
+        'aria-controls="event-tree">Hide unchanged events</button>\n'
+        "</div>\n"
         "</div>\n"
         '<ol class="event-tree" id="event-tree"></ol>\n'
         "</section>\n"

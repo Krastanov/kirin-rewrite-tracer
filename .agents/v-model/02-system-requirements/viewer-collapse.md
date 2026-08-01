@@ -1,8 +1,8 @@
 # Event Subtree Collapse Requirements
 
 One disclosure control per non-leaf event row navigates a large hierarchy without
-competing with SYS-020 selection. Keyboard/focus behavior and visual presentation are
-specified by SYS-023 and SYS-024.
+competing with SYS-020 selection or SYS-026 filtering. Keyboard/focus behavior and
+visual presentation are specified by SYS-023 and SYS-024.
 
 ## SYS-025 — Collapse a non-leaf subtree that holds no selected event
 
@@ -16,9 +16,10 @@ specified by SYS-023 and SYS-024.
   A collapsed event shall hide every strict descendant row transitively before
   presentation, and those rows shall expose no row, control, or manual or accessibility
   target exactly as SYS-020 parent dominance requires. Collapse shall only hide: a row
-  shall be displayed if and only if no selected ancestor hides it under SYS-020 and no
-  collapsed ancestor hides it, so no collapse state can reveal a row that parent
-  dominance hides. A hidden row shall retain its own collapse state, and expanding an
+  shall be displayed if and only if no selected ancestor hides it under SYS-020, no
+  collapsed ancestor hides it, and SYS-026 filtering does not hide it, so no collapse
+  state can reveal a row that another rule hides. A hidden row shall retain its own
+  collapse state, and expanding an
   ancestor shall restore each descendant at its exact original hierarchical position
   with that retained state and without stale selection state.
   The control shall be enabled if and only if its event is non-leaf and no selected
@@ -28,7 +29,7 @@ specified by SYS-023 and SYS-024.
   disabled control cannot change state, collapse shall never hide a selected event or
   the range anchor. A control whose own row is not displayed shall likewise reject
   activation.
-  A SYS-020 Shift range shall snapshot exactly the rows displayed under both rules, so a
+  A SYS-020 Shift range shall snapshot exactly the rows displayed under all three rules, so a
   collapsed subtree contributes only its collapsed root to the interval and its hidden
   descendants can neither join nor be swallowed by that range. Selecting a collapsed
   event shall leave it collapsed and disable its control; Clear selection shall leave

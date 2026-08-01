@@ -110,21 +110,26 @@ These are logical boundaries, not package or file topology.
   frontier/anchor, clears derived state, and restores rows. One independent collapse
   state hides non-leaf subtrees, composes with parent dominance as a union that never
   reveals, and admits a transition only for a displayed non-leaf event whose subtree
-  holds no selected event. Columns preserve logical
+  holds no selected event. A document-local unchanged filter classifies complete events
+  from exact snapshot semantics plus `has_done_something`, never hides inconsistent or
+  incomplete events directly, hides qualifying subtrees, and reconciles frontier and
+  anchor before rebuilding columns. Columns preserve logical
   roles, exact two-role handoffs, absent barriers, and nontransitive equality. Provenance
   uses rebuilt indexes, exact identity/one-hop edge policy, both directions, side-isolated
   shared columns, and unmatched endpoints. The always-visible selected-event facts
   region exposes every owned field/absence without copying descendant facts to a parent.
-- **Parents:** SYS-019, SYS-020, SYS-021, SYS-022, SYS-025
+- **Parents:** SYS-019, SYS-020, SYS-021, SYS-022, SYS-025, SYS-026
 - **Acceptance criterion:** All click/range/Clear, collapse-eligibility, equality,
   barrier, neighbor, shared, unmatched, and ownership fixtures match independent
-  reducers; zero selection names no event and each selection exposes exactly its
+  reducers, including all classification/filter/reconciliation cases; zero selection
+  names no event and each selection exposes exactly its
   canonical inventory.
 - **Verification:** INTV-007 (test)
 
 ## SUB-008 — Preserve accessibility, focus, and fixed presentation
 
-- **Normative statement:** Native event, occurrence, collapse, skip, and Clear controls;
+- **Normative statement:** Native event, occurrence, collapse, unchanged-filter, skip,
+  and Clear controls;
   labelled workspace and facts; polite status; and one nonmodal metadata region shall
   share reducers across pointer/keyboard input. Clear and collapse keep focus; removal
   uses deterministic
@@ -133,7 +138,7 @@ These are logical boundaries, not package or file topology.
   preserves SYS-024 contrast, non-color cues, Rich projection, and consecutive no-wrap
   scrolling. V1 supports measured CSS viewports at least `640 × 480` at 100%/200% zoom
   and makes no claim below either dimension.
-- **Parents:** SYS-020, SYS-022, SYS-023, SYS-024, SYS-025
+- **Parents:** SYS-020, SYS-022, SYS-023, SYS-024, SYS-025, SYS-026
 - **Acceptance criterion:** Native-order, parity, Clear, collapse-eligibility, fallback,
   overlay/candidate, style/contrast, boundary, and varied larger-viewport oracles pass
   without detached state, wrapping, clipping, reordering, or below-floor support claims.
