@@ -36,6 +36,7 @@ include = [
   "/.gitignore",
   "/.pre-commit-config.yaml",
   "/AGENTS.md",
+  "/EXAMPLES.md",
   "/README.md",
   "/pyproject.toml",
   "/uv.lock",
