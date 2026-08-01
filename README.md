@@ -1,3 +1,5 @@
+AI Slop Warning! No human has reviewed this code or even read through the v model in `.agents`.
+
 # Kirin Rewrite Tracer
 
 [![CI](https://github.com/Krastanov/kirin-rewrite-tracer/actions/workflows/ci.yml/badge.svg)](https://github.com/Krastanov/kirin-rewrite-tracer/actions/workflows/ci.yml)
